@@ -553,6 +553,8 @@ enum ImpactType {
 
 This project was built as part of the SESD Workshop assignment demonstrating clean OOP architecture in Node.js with TypeScript.
 
+Contributions, issues, and feature requests are welcome!
+
 ## Author
 
 **Padam Rathi**
