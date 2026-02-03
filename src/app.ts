@@ -28,7 +28,7 @@ class App {
 
   public startServer() {
     this.app.listen(this.port, () => {
-      console.log(`🚀 Server running on http://localhost:${this.port}`);
+      console.log(`Server running on http://localhost:${this.port}`);
     });
   }
 }
