@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { Routes } from '../utils/interfaces';
 import ImpactController from '../controllers/impact.controller';
+import { authenticateToken } from '../middleware/auth.middleware';
+import { validateImpactCreate, validateImpactUpdate } from '../middleware/validation.middleware';
 
-// Routes: Define API endpoints
 class ImpactRoutes implements Routes {
   path = '/api/impact';
   router: Router = Router();
@@ -14,13 +15,27 @@ class ImpactRoutes implements Routes {
   }
 
   private initializeRoutes() {
-    // TODO: Define routes
-    // POST   /api/impact          - Create new impact
-    // GET    /api/impact          - Get all impacts (with filters)
-    // GET    /api/impact/:id      - Get single impact
-    // PUT    /api/impact/:id      - Update impact
-    // DELETE /api/impact/:id      - Delete impact
-    // GET    /api/impact/summary  - Get CO2 summary
+    this.router.post(
+      `${this.path}`,
+      authenticateToken,
+      validateImpactCreate,
+      this.impactController.createImpact
+    );
+
+    this.router.get(`${this.path}/summary`, authenticateToken, this.impactController.getSummary);
+
+    this.router.get(`${this.path}`, authenticateToken, this.impactController.getAllImpacts);
+
+    this.router.get(`${this.path}/:id`, authenticateToken, this.impactController.getImpact);
+
+    this.router.put(
+      `${this.path}/:id`,
+      authenticateToken,
+      validateImpactUpdate,
+      this.impactController.updateImpact
+    );
+
+    this.router.delete(`${this.path}/:id`, authenticateToken, this.impactController.deleteImpact);
   }
 }
 
