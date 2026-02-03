@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { Routes } from '../utils/interfaces';
 import AuthController from '../controllers/auth.controller';
+import { validateRegister, validateLogin } from '../middleware/validation.middleware';
 
-// Auth Routes
 class AuthRoutes implements Routes {
   path = '/api/auth';
   router: Router = Router();
@@ -14,9 +14,8 @@ class AuthRoutes implements Routes {
   }
 
   private initializeRoutes() {
-    // TODO: Define auth routes
-    // POST /api/auth/register
-    // POST /api/auth/login
+    this.router.post(`${this.path}/register`, validateRegister, this.authController.register);
+    this.router.post(`${this.path}/login`, validateLogin, this.authController.login);
   }
 }
 
