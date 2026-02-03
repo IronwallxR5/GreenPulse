@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum ImpactType {
+  COMPUTE   // Cloud compute instances - 0.5 kg CO2/hour
+  STORAGE   // Data storage - 0.12 kg CO2/GB/month
+  NETWORK   // Data transfer - 0.06 kg CO2/GB
+  API_CALL  // API requests - 0.0001 kg CO2/request
+}
+
+model User {
+  id         Int          @id @default(autoincrement())
+  email      String       @unique
+  password   String       // Hashed with bcrypt
+  name       String
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  
+  impactLogs ImpactLog[]
+  
+  @@map("users")
+}
+
+model ImpactLog {
+  id          Int        @id @default(autoincrement())
+  name        String
+  description String?    @db.Text
+  type        ImpactType 
+  unitValue   Float      // Hours, GB, requests, etc.
+  carbonScore Float      // Calculated CO2e in kg
+  userId      Int
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("impact_logs")
+}
