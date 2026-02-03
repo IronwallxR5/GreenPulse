@@ -1,12 +1,18 @@
 import prisma from '../config/prisma';
 import { RegisterDTO } from '../utils/interfaces';
 
-// User Repository: Database operations for users
 class UserRepository {
-  // TODO: Implement user-related database methods
-  // - create(data)
-  // - findByEmail(email)
-  // - findById(id)
+    async create(data : RegisterDTO) {
+        return await prisma.user.create({data : data})
+    }
+
+    async findByEmail(email : string) {
+        return await prisma.user.findUnique({where : {email}})
+    }
+
+    async findById(id : number) {
+        return await prisma.user.findUnique({where : {id}})
+    }
 }
 
 export default UserRepository;
