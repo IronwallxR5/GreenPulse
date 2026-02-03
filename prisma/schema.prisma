@@ -8,16 +8,16 @@ datasource db {
 }
 
 enum ImpactType {
-  COMPUTE   // Cloud compute instances - 0.5 kg CO2/hour
-  STORAGE   // Data storage - 0.12 kg CO2/GB/month
-  NETWORK   // Data transfer - 0.06 kg CO2/GB
-  API_CALL  // API requests - 0.0001 kg CO2/request
+  COMPUTE   
+  STORAGE   
+  NETWORK   
+  API_CALL  
 }
 
 model User {
   id         Int          @id @default(autoincrement())
   email      String       @unique
-  password   String       // Hashed with bcrypt
+  password   String      
   name       String
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
@@ -32,8 +32,8 @@ model ImpactLog {
   name        String
   description String?    @db.Text
   type        ImpactType 
-  unitValue   Float      // Hours, GB, requests, etc.
-  carbonScore Float      // Calculated CO2e in kg
+  unitValue   Float      
+  carbonScore Float      
   userId      Int
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
