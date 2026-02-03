@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import AuthService from '../services/auth.service';
+import { StatusCodes } from 'http-status-codes';
 
-// Auth Controller: Handle authentication requests
 class AuthController {
   private authService: AuthService;
 
@@ -9,9 +9,25 @@ class AuthController {
     this.authService = new AuthService();
   }
 
-  // TODO: Implement auth endpoints
-  // - register = async (req, res)
-  // - login = async (req, res)
+  register = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await this.authService.register(req.body);
+      res.status(StatusCodes.CREATED).json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Registration failed';
+      res.status(StatusCodes.BAD_REQUEST).json({ message });
+    }
+  };
+
+  login = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const result = await this.authService.login(req.body);
+      res.status(StatusCodes.OK).json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Login failed';
+      res.status(StatusCodes.UNAUTHORIZED).json({ message });
+    }
+  };
 }
 
 export default AuthController;
