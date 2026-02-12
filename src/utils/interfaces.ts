@@ -1,13 +1,11 @@
 import { Router } from 'express';
 import { ImpactType } from '@prisma/client';
 
-// Route interface (from reference repo)
 export interface Routes {
   path?: string;
   router: Router;
 }
 
-// Impact Event Data Transfer Objects
 export interface CreateImpactDTO {
   name: string;
   description?: string;
@@ -22,7 +20,16 @@ export interface UpdateImpactDTO {
   unitValue?: number;
 }
 
-// Auth DTOs
+export interface CreateProjectDTO {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateProjectDTO {
+  name?: string;
+  description?: string;
+}
+
 export interface RegisterDTO {
   email: string;
   password: string;
