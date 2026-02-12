@@ -5,7 +5,7 @@ import { authenticateToken } from '../middleware/auth.middleware';
 import { validateImpactCreate, validateImpactUpdate } from '../middleware/validation.middleware';
 
 class ImpactRoutes implements Routes {
-  path = '/api/impact';
+  path = '/api/projects/:projectId/impacts';
   router: Router = Router();
   private impactController: ImpactController;
 
