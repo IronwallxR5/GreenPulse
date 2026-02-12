@@ -1,4 +1,5 @@
 import ImpactRepository from '../repositories/impact.repository';
+import ProjectRepository from '../repositories/project.repository';
 import { CreateImpactDTO, UpdateImpactDTO } from '../utils/interfaces';
 import { ImpactType } from '@prisma/client';
 import {
@@ -20,21 +21,33 @@ interface GetAllFilters {
 
 class ImpactService {
   private impactRepository: ImpactRepository;
+  private projectRepository: ProjectRepository;
 
   constructor() {
     this.impactRepository = new ImpactRepository();
+    this.projectRepository = new ProjectRepository();
   }
 
-  async createImpact(data: CreateImpactDTO, userId: number) {
+  private async verifyProjectOwnership(projectId: number, userId: number) {
+    const project = await this.projectRepository.findById(projectId);
+    if (!project) {
+      throw new Error('Project not found');
+    }
+    if (project.userId !== userId) {
+      throw new Error('Unauthorized access');
+    }
+    return project;
+  }
+
+  async createImpact(data: CreateImpactDTO, projectId: number, userId: number) {
+    await this.verifyProjectOwnership(projectId, userId);
     const carbonScore = this.calculateCO2(data.type, data.unitValue);
 
-    const impact = await this.impactRepository.create({
+    return await this.impactRepository.create({
       ...data,
       carbonScore,
-      userId,
+      projectId,
     });
-
-    return impact;
   }
 
   async getImpactById(id: number, userId: number) {
@@ -44,15 +57,16 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    if (impact.userId !== userId) {
+    if (impact.project.userId !== userId) {
       throw new Error('Unauthorized access');
     }
 
     return impact;
   }
 
-  async getAllImpacts(userId: number, filters?: GetAllFilters) {
-    return await this.impactRepository.findByUserId(userId, filters);
+  async getAllImpacts(projectId: number, userId: number, filters?: GetAllFilters) {
+    await this.verifyProjectOwnership(projectId, userId);
+    return await this.impactRepository.findByProjectId(projectId, filters);
   }
 
   async updateImpact(id: number, data: UpdateImpactDTO, userId: number) {
@@ -62,7 +76,7 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    if (existingImpact.userId !== userId) {
+    if (existingImpact.project.userId !== userId) {
       throw new Error('Unauthorized access');
     }
 
@@ -84,15 +98,16 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    if (impact.userId !== userId) {
+    if (impact.project.userId !== userId) {
       throw new Error('Unauthorized access');
     }
 
     return await this.impactRepository.delete(id);
   }
 
-  async getSummary(userId: number) {
-    return await this.impactRepository.getSummaryByUserId(userId);
+  async getSummary(projectId: number, userId: number) {
+    await this.verifyProjectOwnership(projectId, userId);
+    return await this.impactRepository.getSummaryByProjectId(projectId);
   }
 
   private calculateCO2(type: ImpactType, unitValue: number): number {
