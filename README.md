@@ -1,4 +1,4 @@
-# GreenPulse
+# GreenPulse 🌱
 
 A backend API for developers and DevOps teams to track the carbon footprint of their digital infrastructure. GreenPulse transforms abstract technical usage metrics into measurable CO2e (Carbon Dioxide Equivalent) scores.
 
@@ -16,21 +16,22 @@ Each event type calculates its carbon footprint based on industry-standard conve
 
 ## Features Implemented
 
-### Core CRUD Operations ✅
-- **Create**: Add new impact logs with automatic CO2 calculation
-- **Read**: Retrieve individual or all impact logs
-- **Update**: Modify existing impact entries
-- **Delete**: Remove impact logs
-- **List**: Get all impacts with advanced filtering
+### Core CRUD Operations
+- **Create**: Add new projects and impact logs with automatic CO2 calculation
+- **Read**: Retrieve individual or all projects/impacts
+- **Update**: Modify existing projects and impact entries
+- **Delete**: Remove projects and impact logs (cascade delete)
+- **List**: Get all projects and impacts with advanced filtering
 
-### Advanced Features ✅
-- **Search & Filter**: Filter by impact type, search by name/description
+### Advanced Features
+- **Search & Filter**: Filter impacts by type, search by name/description
 - **Sorting**: Sort by date, carbon score, or name (ascending/descending)
 - **Pagination**: Limit results with page and limit parameters
-- **Aggregation**: Get total CO2 summary with breakdown by type
+- **Aggregation**: Get total CO2 summary with breakdown by type per project
 - **Validation**: Zod schemas validate all incoming requests
 - **Error Handling**: Clean HTTP status codes with descriptive messages
 - **Authentication**: JWT-based user authentication with bcrypt password hashing
+- **Project Grouping**: Organize impacts under projects for better tracking
 
 ---
 
@@ -64,8 +65,10 @@ Services receive their dependencies through constructors:
 ```typescript
 class ImpactService {
   private impactRepository: ImpactRepository;
+  private projectRepository: ProjectRepository;
   constructor() {
     this.impactRepository = new ImpactRepository();
+    this.projectRepository = new ProjectRepository();
   }
 }
 ```
@@ -78,6 +81,7 @@ Each class has one clear purpose:
 - `ImpactRepository` → Database operations only
 - `ImpactService` → Business logic and calculations
 - `ImpactController` → HTTP request handling
+- `ProjectService` → Project management logic
 
 ---
 
@@ -104,23 +108,52 @@ classDiagram
         +type: ImpactType
         +calculateCO2()* number
     }
-    
+
     class ComputeEvent {
         +calculateCO2() number
     }
-    
+
     class StorageEvent {
         +calculateCO2() number
     }
-    
+
     class NetworkEvent {
         +calculateCO2() number
     }
-    
+
     class ApiCallEvent {
         +calculateCO2() number
     }
-    
+
+    class ProjectController {
+        -projectService: ProjectService
+        +createProject(req, res)
+        +getAllProjects(req, res)
+        +getProject(req, res)
+        +updateProject(req, res)
+        +deleteProject(req, res)
+        +getProjectSummary(req, res)
+    }
+
+    class ProjectService {
+        -projectRepository: ProjectRepository
+        +createProject(data, userId)
+        +getAllProjects(userId)
+        +getProjectById(id, userId)
+        +updateProject(id, data, userId)
+        +deleteProject(id, userId)
+        +getProjectSummary(id, userId)
+    }
+
+    class ProjectRepository {
+        +create(data)
+        +findById(id)
+        +findByUserId(userId)
+        +update(id, data)
+        +delete(id)
+        +getSummary(id)
+    }
+
     class ImpactController {
         -impactService: ImpactService
         +createImpact(req, res)
@@ -130,33 +163,35 @@ classDiagram
         +deleteImpact(req, res)
         +getSummary(req, res)
     }
-    
+
     class ImpactService {
         -impactRepository: ImpactRepository
-        +createImpact(data, userId)
-        +getAllImpacts(userId, filters)
+        -projectRepository: ProjectRepository
+        +createImpact(data, projectId, userId)
+        +getAllImpacts(projectId, userId, filters)
         +getImpactById(id, userId)
         +updateImpact(id, data, userId)
         +deleteImpact(id, userId)
-        +getSummary(userId)
+        +getSummary(projectId, userId)
         -calculateCO2(type, unitValue)
+        -verifyProjectOwnership(projectId, userId)
     }
-    
+
     class ImpactRepository {
         +create(data)
         +findById(id)
-        +findByUserId(userId, filters)
+        +findByProjectId(projectId, filters)
         +update(id, data)
         +delete(id)
-        +getSummaryByUserId(userId)
+        +getSummaryByProjectId(projectId)
     }
-    
+
     class AuthController {
         -authService: AuthService
         +register(req, res)
         +login(req, res)
     }
-    
+
     class AuthService {
         -userRepository: UserRepository
         +register(data)
@@ -165,24 +200,36 @@ classDiagram
         -comparePassword(plain, hashed)
         -generateToken(userId)
     }
-    
+
     class UserRepository {
         +create(data)
         +findByEmail(email)
         +findById(id)
     }
-    
+
     ImpactEvent <|-- ComputeEvent
     ImpactEvent <|-- StorageEvent
     ImpactEvent <|-- NetworkEvent
     ImpactEvent <|-- ApiCallEvent
-    
+
+    ProjectController --> ProjectService
+    ProjectService --> ProjectRepository
+
     ImpactController --> ImpactService
     ImpactService --> ImpactRepository
+    ImpactService --> ProjectRepository
     ImpactService ..> ImpactEvent : uses
-    
+
     AuthController --> AuthService
     AuthService --> UserRepository
+```
+
+---
+
+## Data Model
+
+```
+User (1) ──→ (many) Projects (1) ──→ (many) ImpactLogs
 ```
 
 ---
@@ -191,32 +238,36 @@ classDiagram
 
 ```
 src/
-├── server.ts                      # Entry point
-├── app.ts                         # Express app configuration
+├── server.ts                       # Entry point
+├── app.ts                          # Express app configuration
 ├── config/
-│   └── prisma.ts                  # Prisma client singleton
+│   └── prisma.ts                   # Prisma client singleton
 ├── models/
-│   └── ImpactEvent.ts            # OOP classes (Inheritance & Polymorphism)
-├── repositories/                  # Data Access Layer
+│   └── ImpactEvent.ts              # OOP classes (Inheritance & Polymorphism)
+├── repositories/                   # Data Access Layer
 │   ├── impact.repository.ts
+│   ├── project.repository.ts
 │   └── user.repository.ts
-├── services/                      # Business Logic Layer
+├── services/                       # Business Logic Layer
 │   ├── impact.service.ts
+│   ├── project.service.ts
 │   └── auth.service.ts
-├── controllers/                   # HTTP Request Handlers
+├── controllers/                    # HTTP Request Handlers
 │   ├── impact.controller.ts
+│   ├── project.controller.ts
 │   └── auth.controller.ts
-├── routes/                        # API Route Definitions
+├── routes/                         # API Route Definitions
 │   ├── impact.routes.ts
+│   ├── project.routes.ts
 │   └── auth.routes.ts
-├── middleware/                    # Validation & Authentication
+├── middleware/                     # Validation & Authentication
 │   ├── auth.middleware.ts
 │   └── validation.middleware.ts
 └── utils/
-    └── interfaces.ts              # TypeScript interfaces & DTOs
+    └── interfaces.ts               # TypeScript interfaces & DTOs
 
 prisma/
-└── schema.prisma                  # Database schema
+└── schema.prisma                   # Database schema
 ```
 
 ---
@@ -226,13 +277,13 @@ prisma/
 ### Prerequisites
 - Node.js (v18+)
 - MySQL (running locally)
-- npm or yarn
+- npm
 
 ### Installation
 
 1. **Clone the repository**
 ```bash
-git clone "https://github.com/IronwallxR5/GreenPulse.git"
+git clone https://github.com/IronwallxR5/GreenPulse.git
 cd GreenPulse
 ```
 
@@ -298,7 +349,7 @@ Content-Type: application/json
 **Response:**
 ```json
 {
-  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token": "eyJhbGciOiJIUzI1NiIs...",
   "user": {
     "id": 1,
     "email": "user@example.com",
@@ -318,22 +369,61 @@ Content-Type: application/json
 }
 ```
 
-**Response:** Same as registration
+---
+
+### Project Endpoints (Protected)
+
+All protected endpoints require: `Authorization: Bearer <token>`
+
+#### Create Project
+```http
+POST /api/projects
+Content-Type: application/json
+
+{
+  "name": "Cloud Infrastructure",
+  "description": "Main cloud setup"
+}
+```
+
+#### Get All Projects
+```http
+GET /api/projects
+```
+
+#### Get Single Project
+```http
+GET /api/projects/:id
+```
+
+#### Update Project
+```http
+PUT /api/projects/:id
+Content-Type: application/json
+
+{
+  "name": "Updated Name"
+}
+```
+
+#### Delete Project
+```http
+DELETE /api/projects/:id
+```
+
+#### Get Project CO2 Summary
+```http
+GET /api/projects/:id/summary
+```
 
 ---
 
-### Impact Endpoints (Protected)
-
-All impact endpoints require authentication. Include the JWT token in the `Authorization` header:
-```
-Authorization: Bearer <your-token>
-```
+### Impact Endpoints (Protected, Nested under Projects)
 
 #### Create Impact
 ```http
-POST /api/impact
+POST /api/projects/:projectId/impacts
 Content-Type: application/json
-Authorization: Bearer <token>
 
 {
   "name": "AWS EC2 Instance",
@@ -358,58 +448,36 @@ Authorization: Bearer <token>
   "type": "COMPUTE",
   "unitValue": 24,
   "carbonScore": 12,
-  "userId": 1,
-  "createdAt": "2026-02-03T18:04:06.899Z",
-  "updatedAt": "2026-02-03T18:04:06.899Z"
+  "projectId": 1,
+  "createdAt": "2026-02-12T04:57:46.251Z",
+  "updatedAt": "2026-02-12T04:57:46.251Z"
 }
 ```
 
 #### Get All Impacts (with filters)
 ```http
-GET /api/impact?type=COMPUTE&search=AWS&sortBy=carbonScore&sortOrder=desc&page=1&limit=10
-Authorization: Bearer <token>
+GET /api/projects/:projectId/impacts?type=COMPUTE&search=AWS&sortBy=carbonScore&sortOrder=desc&page=1&limit=10
 ```
 
 **Query Parameters:**
-- `type` (optional): Filter by impact type
-- `search` (optional): Search in name/description
-- `sortBy` (optional): `createdAt`, `carbonScore`, or `name`
-- `sortOrder` (optional): `asc` or `desc`
-- `page` (optional): Page number (default: 1)
-- `limit` (optional): Items per page (default: 10)
-
-**Response:**
-```json
-{
-  "data": [
-    {
-      "id": 1,
-      "name": "AWS EC2 Instance",
-      "type": "COMPUTE",
-      "carbonScore": 12,
-      ...
-    }
-  ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 1,
-    "totalPages": 1
-  }
-}
-```
+| Parameter | Description | Options |
+|-----------|-------------|---------|
+| `type` | Filter by impact type | `COMPUTE`, `STORAGE`, `NETWORK`, `API_CALL` |
+| `search` | Search in name/description | any string |
+| `sortBy` | Sort field | `createdAt`, `carbonScore`, `name` |
+| `sortOrder` | Sort direction | `asc`, `desc` |
+| `page` | Page number | default: 1 |
+| `limit` | Items per page | default: 10 |
 
 #### Get Single Impact
 ```http
-GET /api/impact/:id
-Authorization: Bearer <token>
+GET /api/projects/:projectId/impacts/:id
 ```
 
 #### Update Impact
 ```http
-PUT /api/impact/:id
+PUT /api/projects/:projectId/impacts/:id
 Content-Type: application/json
-Authorization: Bearer <token>
 
 {
   "name": "Updated Name",
@@ -419,37 +487,23 @@ Authorization: Bearer <token>
 
 #### Delete Impact
 ```http
-DELETE /api/impact/:id
-Authorization: Bearer <token>
+DELETE /api/projects/:projectId/impacts/:id
 ```
 
-#### Get CO2 Summary
+#### Get Impact Summary for Project
 ```http
-GET /api/impact/summary
-Authorization: Bearer <token>
+GET /api/projects/:projectId/impacts/summary
 ```
 
 **Response:**
 ```json
 {
-  "totalCO2": 27,
+  "totalCO2": 78,
   "totalLogs": 3,
   "byType": [
-    {
-      "type": "COMPUTE",
-      "totalCO2": 12,
-      "count": 1
-    },
-    {
-      "type": "STORAGE",
-      "totalCO2": 12,
-      "count": 1
-    },
-    {
-      "type": "NETWORK",
-      "totalCO2": 3,
-      "count": 1
-    }
+    { "type": "COMPUTE", "totalCO2": 24, "count": 1 },
+    { "type": "STORAGE", "totalCO2": 24, "count": 1 },
+    { "type": "NETWORK", "totalCO2": 30, "count": 1 }
   ]
 }
 ```
@@ -475,27 +529,35 @@ Authorization: Bearer <token>
 ```bash
 curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"pass123","name":"Test User"}'
+  -d '{"email":"test@example.com","password":"pass1234","name":"Test User"}'
 ```
 
 **Login & Save Token:**
 ```bash
-TOKEN=$(curl -X POST http://localhost:8080/api/auth/login \
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"pass123"}' | jq -r '.token')
+  -d '{"email":"test@example.com","password":"pass1234"}' | jq -r '.token')
+```
+
+**Create Project:**
+```bash
+curl -X POST http://localhost:8080/api/projects \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
+  -d '{"name":"My Cloud","description":"Cloud infrastructure"}'
 ```
 
 **Create Impact:**
 ```bash
-curl -X POST http://localhost:8080/api/impact \
+curl -X POST http://localhost:8080/api/projects/1/impacts \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"EC2 Server","type":"COMPUTE","unitValue":24}'
 ```
 
-**Get Summary:**
+**Get Project Summary:**
 ```bash
-curl http://localhost:8080/api/impact/summary \
+curl http://localhost:8080/api/projects/1/summary \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -505,13 +567,24 @@ curl http://localhost:8080/api/impact/summary \
 
 ```prisma
 model User {
-  id         Int          @id @default(autoincrement())
-  email      String       @unique
+  id         Int       @id @default(autoincrement())
+  email      String    @unique
   password   String
   name       String
-  createdAt  DateTime     @default(now())
-  updatedAt  DateTime     @updatedAt
-  impactLogs ImpactLog[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  projects   Project[]
+}
+
+model Project {
+  id          Int         @id @default(autoincrement())
+  name        String
+  description String?
+  userId      Int
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  impactLogs  ImpactLog[]
 }
 
 model ImpactLog {
@@ -521,10 +594,10 @@ model ImpactLog {
   type        ImpactType
   unitValue   Float
   carbonScore Float
-  userId      Int
+  projectId   Int
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-  user        User       @relation(fields: [userId], references: [id])
+  project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 enum ImpactType {
@@ -537,23 +610,20 @@ enum ImpactType {
 
 ---
 
-<!-- ## Future Enhancements
+## Future Enhancements
 
-- Add Project model for grouping impacts by projects
-- Implement role-based access control (ADMIN/USER)
-- Add date range filtering for time-based analytics
-- Generate PDF reports of carbon footprint
-- Integration with cloud provider APIs for automated tracking
+- Role-based access control (ADMIN/USER)
+- Date range filtering for time-based analytics
+- PDF report generation for carbon footprint
+- Cloud provider API integration for automated tracking
 - Real-time dashboard with WebSocket updates
-- Multi-organization support -->
+- Multi-organization support
 
 ---
 
 ## Contributing
 
 This project was built as part of the SESD Workshop assignment demonstrating clean OOP architecture in Node.js with TypeScript.
-
-Contributions, issues, and feature requests are welcome!
 
 ## Author
 
