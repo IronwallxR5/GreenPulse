@@ -28,6 +28,16 @@ const updateImpactSchema = z.object({
   unitValue: z.number().positive().optional(),
 });
 
+const createProjectSchema = z.object({
+  name: z.string().min(1, 'Project name is required'),
+  description: z.string().optional(),
+});
+
+const updateProjectSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+});
+
 export const validateRegister = (req: Request, res: Response, next: NextFunction) => {
   try {
     registerSchema.parse(req.body);
@@ -79,6 +89,38 @@ export const validateImpactCreate = (req: Request, res: Response, next: NextFunc
 export const validateImpactUpdate = (req: Request, res: Response, next: NextFunction) => {
   try {
     updateImpactSchema.parse(req.body);
+    next();
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(StatusCodes.BAD_REQUEST).json({ 
+        message: 'Validation failed', 
+        errors: error.issues 
+      });
+    } else {
+      next(error);
+    }
+  }
+};
+
+export const validateProjectCreate = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    createProjectSchema.parse(req.body);
+    next();
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      res.status(StatusCodes.BAD_REQUEST).json({ 
+        message: 'Validation failed', 
+        errors: error.issues 
+      });
+    } else {
+      next(error);
+    }
+  }
+};
+
+export const validateProjectUpdate = (req: Request, res: Response, next: NextFunction) => {
+  try {
+    updateProjectSchema.parse(req.body);
     next();
   } catch (error) {
     if (error instanceof z.ZodError) {
