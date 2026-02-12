@@ -13,11 +13,13 @@ class ImpactController {
   createImpact = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.userId!;
-      const impact = await this.impactService.createImpact(req.body, userId);
+      const projectId = parseInt(String(req.params.projectId));
+      const impact = await this.impactService.createImpact(req.body, projectId, userId);
       res.status(StatusCodes.CREATED).json(impact);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create impact';
-      res.status(StatusCodes.BAD_REQUEST).json({ message });
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.BAD_REQUEST;
+      res.status(status).json({ message });
     }
   };
 
@@ -37,6 +39,7 @@ class ImpactController {
   getAllImpacts = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.userId!;
+      const projectId = parseInt(String(req.params.projectId));
       const filters = {
         type: req.query.type as ImpactType | undefined,
         search: req.query.search as string | undefined,
@@ -46,11 +49,12 @@ class ImpactController {
         limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
       };
 
-      const result = await this.impactService.getAllImpacts(userId, filters);
+      const result = await this.impactService.getAllImpacts(projectId, userId, filters);
       res.status(StatusCodes.OK).json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to get impacts';
-      res.status(StatusCodes.BAD_REQUEST).json({ message });
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.BAD_REQUEST;
+      res.status(status).json({ message });
     }
   };
 
@@ -83,11 +87,13 @@ class ImpactController {
   getSummary = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.userId!;
-      const summary = await this.impactService.getSummary(userId);
+      const projectId = parseInt(String(req.params.projectId));
+      const summary = await this.impactService.getSummary(projectId, userId);
       res.status(StatusCodes.OK).json(summary);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to get summary';
-      res.status(StatusCodes.BAD_REQUEST).json({ message });
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.BAD_REQUEST;
+      res.status(status).json({ message });
     }
   };
 }
