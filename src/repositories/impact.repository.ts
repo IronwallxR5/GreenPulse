@@ -2,7 +2,7 @@ import prisma from '../config/prisma';
 import { ImpactType } from '@prisma/client';
 import { CreateImpactDTO, UpdateImpactDTO } from '../utils/interfaces';
 
-interface FindByUserIdFilters {
+interface FindByProjectIdFilters {
   type?: ImpactType;
   search?: string;
   sortBy?: 'createdAt' | 'carbonScore' | 'name';
@@ -12,18 +12,18 @@ interface FindByUserIdFilters {
 }
 
 class ImpactRepository {
-  async create(data: CreateImpactDTO & { carbonScore: number; userId: number }) {
+  async create(data: CreateImpactDTO & { carbonScore: number; projectId: number }) {
     return await prisma.impactLog.create({ data });
   }
 
   async findById(id: number) {
     return await prisma.impactLog.findUnique({
       where: { id },
-      include: { user: { select: { id: true, name: true, email: true } } },
+      include: { project: { select: { id: true, name: true, userId: true } } },
     });
   }
 
-  async findByUserId(userId: number, filters?: FindByUserIdFilters) {
+  async findByProjectId(projectId: number, filters?: FindByProjectIdFilters) {
     const {
       type,
       search,
@@ -33,7 +33,7 @@ class ImpactRepository {
       limit = 10,
     } = filters || {};
 
-    const where: any = { userId };
+    const where: any = { projectId };
 
     if (type) {
       where.type = type;
@@ -78,16 +78,16 @@ class ImpactRepository {
     return await prisma.impactLog.delete({ where: { id } });
   }
 
-  async getSummaryByUserId(userId: number) {
+  async getSummaryByProjectId(projectId: number) {
     const totalCO2 = await prisma.impactLog.aggregate({
-      where: { userId },
+      where: { projectId },
       _sum: { carbonScore: true },
       _count: true,
     });
 
     const byType = await prisma.impactLog.groupBy({
       by: ['type'],
-      where: { userId },
+      where: { projectId },
       _sum: { carbonScore: true },
       _count: true,
     });
