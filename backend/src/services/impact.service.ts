@@ -82,9 +82,9 @@ class ImpactService {
 
     const updateData: any = { ...data };
 
-    if (data.type || data.unitValue) {
-      const type = data.type || existingImpact.type;
-      const unitValue = data.unitValue || existingImpact.unitValue;
+    if (data.type !== undefined || data.unitValue !== undefined) {
+      const type = data.type !== undefined ? data.type : existingImpact.type;
+      const unitValue = data.unitValue !== undefined ? data.unitValue : existingImpact.unitValue;
       updateData.carbonScore = this.calculateCO2(type, unitValue);
     }
 

@@ -23,8 +23,14 @@ export const authenticateToken = (req: Request, res: Response, next: NextFunctio
     return;
   }
 
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: 'Server configuration error' });
+    return;
+  }
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
+    const decoded = jwt.verify(token, secret) as JwtPayload;
     req.userId = decoded.userId;
     next();
   } catch (error) {

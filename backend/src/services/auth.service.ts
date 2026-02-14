@@ -66,11 +66,12 @@ class AuthService {
   }
 
   private generateToken(userId: number): string {
-    const secret = process.env.JWT_SECRET!;
+    const secret = process.env.JWT_SECRET;
     if (!secret) {
       throw new Error('JWT_SECRET is not defined');
     }
-    return jwt.sign({ userId }, secret, { expiresIn: '7d' });
+    const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+    return jwt.sign({ userId }, secret, { expiresIn: expiresIn as any });
   }
 }
 
