@@ -1,46 +1,79 @@
-# GreenPulse 🌱
+<div align="center">
 
-A backend API for developers and DevOps teams to track the carbon footprint of their digital infrastructure. GreenPulse transforms abstract technical usage metrics into measurable CO2e (Carbon Dioxide Equivalent) scores.
+# 🌱 GreenPulse
 
-## Project Overview
+**Carbon Footprint Tracking Platform for Digital Infrastructure**
 
-Instead of tracking generic tasks, GreenPulse monitors **Impact Events** such as:
-- **Cloud Compute Usage** - Server instances and processing time
-- **Data Storage** - Cloud storage consumption
-- **Network Transfers** - Data transmission across networks
-- **API Calls** - Request processing overhead
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Express.js](https://img.shields.io/badge/Express.js-5.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
+[![Prisma](https://img.shields.io/badge/Prisma-6.x-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
+[![License: ISC](https://img.shields.io/badge/License-ISC-blue?style=for-the-badge)](LICENSE)
 
-Each event type calculates its carbon footprint based on industry-standard conversion factors.
-
----
-
-## Features Implemented
-
-### Core CRUD Operations
-- **Create**: Add new projects and impact logs with automatic CO2 calculation
-- **Read**: Retrieve individual or all projects/impacts
-- **Update**: Modify existing projects and impact entries
-- **Delete**: Remove projects and impact logs (cascade delete)
-- **List**: Get all projects and impacts with advanced filtering
-
-### Advanced Features
-- **Search & Filter**: Filter impacts by type, search by name/description
-- **Sorting**: Sort by date, carbon score, or name (ascending/descending)
-- **Pagination**: Limit results with page and limit parameters
-- **Aggregation**: Get total CO2 summary with breakdown by type per project
-- **Validation**: Zod schemas validate all incoming requests
-- **Error Handling**: Clean HTTP status codes with descriptive messages
-- **Authentication**: JWT-based user authentication with bcrypt password hashing
-- **Project Grouping**: Organize impacts under projects for better tracking
+*Transform abstract infrastructure metrics into measurable CO2e scores — every compute hour, every GB stored, every API call.*
 
 ---
 
-## OOP Design Decisions
+[Features](#-features) · [Architecture](#-architecture) · [Quick Start](#-quick-start) · [API Reference](#-api-reference) · [CO2 Formulas](#-co2-calculation-formulas) · [Roadmap](#-roadmap)
 
-### 1. Inheritance & Polymorphism
-The core of GreenPulse uses an **abstract base class** with specialized subclasses:
+</div>
 
-```typescript
+---
+
+## 📋 Overview
+
+**GreenPulse** is a backend API that enables developers and DevOps teams to track the carbon footprint of their digital infrastructure. Instead of tracking generic tasks, GreenPulse monitors **Impact Events** — cloud compute usage, data storage, network transfers, and API calls — and calculates their CO2 equivalent using a **Polymorphic Calculation Engine**.
+
+The core engine uses **abstract base classes and inheritance** to compute emissions differently for each infrastructure event type. Adding a new event type requires only creating a new subclass — **zero changes to existing business logic** (Open/Closed Principle).
+
+---
+
+## ✨ Features
+
+| Feature | Status | Description |
+|---------|--------|-------------|
+| **Polymorphic CO2 Engine** | ✅ | Abstract base class with type-specific subclasses (`ComputeEvent`, `StorageEvent`, `NetworkEvent`, `ApiCallEvent`) |
+| **Project Management** | ✅ | Full CRUD with ownership verification — only the project owner can view, edit, or delete |
+| **Impact Event Logging** | ✅ | Record infrastructure actions with auto-calculated carbon scores |
+| **Search & Filter** | ✅ | Filter by type, search by name/description, sort by carbon score or date |
+| **Pagination** | ✅ | Configurable page size and page number for all list endpoints |
+| **Project Summaries** | ✅ | Aggregate CO2 by type with total count and breakdown |
+| **JWT Authentication** | ✅ | Secure token-based auth with 7-day configurable expiry |
+| **Zod Validation** | ✅ | Schema-based request validation with descriptive error messages |
+| **Analytics Dashboard** | 🔜 | Real-time charts with per-project and per-type breakdowns |
+| **PDF/CSV Reports** | 🔜 | Downloadable compliance reports (Strategy Pattern) |
+| **Threshold Alerts** | 🔜 | Carbon limit notifications (Observer Pattern) |
+| **Organization Management** | 🔜 | Multi-tenant team-based carbon tracking |
+| **RBAC** | 🔜 | Role-based access control (User / Admin / System) |
+
+---
+
+## 🏗 Architecture
+
+### Layered Clean Architecture
+
+```
+Client Request
+      │
+      ▼
+┌─────────────┐     ┌──────────────┐     ┌──────────────┐     ┌─────────┐
+│  Route +     │────▶│   Service    │────▶│  Repository  │────▶│ Database│
+│  Middleware  │     │ (Business    │     │ (Data Access)│     │ (MySQL) │
+│ (Auth + Zod) │     │  Logic)      │     │              │     │         │
+└─────────────┘     └──────────────┘     └──────────────┘     └─────────┘
+                           │
+                           ▼
+                    ┌──────────────┐
+                    │ ImpactEvent  │
+                    │ (Polymorphic │
+                    │  CO2 Calc)   │
+                    └──────────────┘
+```
+
+### OOP Class Hierarchy
+
+```
 ImpactEvent (Abstract Base Class)
     ├── ComputeEvent   → 0.5 kg CO2/hour
     ├── StorageEvent   → 0.12 kg CO2/GB/month
@@ -48,297 +81,152 @@ ImpactEvent (Abstract Base Class)
     └── ApiCallEvent   → 0.0001 kg CO2/request
 ```
 
-Each subclass implements its own `calculateCO2()` method, demonstrating **polymorphism**. This design makes adding new impact types seamless without modifying existing code (Open/Closed Principle).
+### Design Patterns Used
 
-### 2. Layered Architecture (Separation of Concerns)
-```
-Controller → Service → Repository → Database
-```
+| Pattern | Where | Purpose |
+|---------|-------|---------|
+| **Factory Method** | `ImpactService.calculateCO2()` | Instantiates correct `ImpactEvent` subclass from `ImpactType` |
+| **Polymorphism** | `ImpactEvent` hierarchy | Each subclass computes CO2 differently via `calculateCO2()` |
+| **Repository** | All data access classes | Abstracts Prisma queries from business logic |
+| **Chain of Responsibility** | Middleware pipeline | Auth → Validation → Controller |
+| **Dependency Injection** | Service constructors | Services receive repository dependencies |
 
-- **Controllers**: Handle HTTP requests/responses only
-- **Services**: Contain business logic and CO2 calculations
-- **Repositories**: Manage database operations (Prisma queries)
-- **Models**: Define OOP classes with inheritance
+### Separation of Concerns
 
-### 3. Dependency Injection
-Services receive their dependencies through constructors:
-```typescript
-class ImpactService {
-  private impactRepository: ImpactRepository;
-  private projectRepository: ProjectRepository;
-  constructor() {
-    this.impactRepository = new ImpactRepository();
-    this.projectRepository = new ProjectRepository();
-  }
-}
-```
-
-### 4. Encapsulation
-Repository classes hide all database implementation details. Services and controllers interact through clean interfaces without knowing the underlying data storage mechanism.
-
-### 5. Single Responsibility Principle
-Each class has one clear purpose:
-- `ImpactRepository` → Database operations only
-- `ImpactService` → Business logic and calculations
-- `ImpactController` → HTTP request handling
-- `ProjectService` → Project management logic
+| Layer | Responsibility | Example |
+|-------|---------------|---------|
+| **Controllers** | HTTP request/response handling only | `ImpactController`, `ProjectController` |
+| **Services** | Business logic, CO2 calculations, ownership checks | `ImpactService`, `AuthService` |
+| **Repositories** | Database operations (Prisma queries) | `ImpactRepository`, `UserRepository` |
+| **Models** | OOP classes with inheritance | `ImpactEvent` abstract class |
+| **Middleware** | Cross-cutting concerns | `authenticateToken`, `validateImpactCreate` |
 
 ---
 
-## Tech Stack
+## 📁 Project Structure
 
-- **Runtime**: Node.js with TypeScript
-- **Framework**: Express.js
-- **ORM**: Prisma with MySQL
-- **Authentication**: JWT (jsonwebtoken) + bcryptjs
-- **Validation**: Zod
-- **Architecture**: OOP with layered design pattern
-
----
-
-## Architecture Diagram
-
-```mermaid
-classDiagram
-    class ImpactEvent {
-        <<abstract>>
-        +id: number
-        +name: string
-        +unitValue: number
-        +type: ImpactType
-        +calculateCO2()* number
-    }
-
-    class ComputeEvent {
-        +calculateCO2() number
-    }
-
-    class StorageEvent {
-        +calculateCO2() number
-    }
-
-    class NetworkEvent {
-        +calculateCO2() number
-    }
-
-    class ApiCallEvent {
-        +calculateCO2() number
-    }
-
-    class ProjectController {
-        -projectService: ProjectService
-        +createProject(req, res)
-        +getAllProjects(req, res)
-        +getProject(req, res)
-        +updateProject(req, res)
-        +deleteProject(req, res)
-        +getProjectSummary(req, res)
-    }
-
-    class ProjectService {
-        -projectRepository: ProjectRepository
-        +createProject(data, userId)
-        +getAllProjects(userId)
-        +getProjectById(id, userId)
-        +updateProject(id, data, userId)
-        +deleteProject(id, userId)
-        +getProjectSummary(id, userId)
-    }
-
-    class ProjectRepository {
-        +create(data)
-        +findById(id)
-        +findByUserId(userId)
-        +update(id, data)
-        +delete(id)
-        +getSummary(id)
-    }
-
-    class ImpactController {
-        -impactService: ImpactService
-        +createImpact(req, res)
-        +getAllImpacts(req, res)
-        +getImpact(req, res)
-        +updateImpact(req, res)
-        +deleteImpact(req, res)
-        +getSummary(req, res)
-    }
-
-    class ImpactService {
-        -impactRepository: ImpactRepository
-        -projectRepository: ProjectRepository
-        +createImpact(data, projectId, userId)
-        +getAllImpacts(projectId, userId, filters)
-        +getImpactById(id, userId)
-        +updateImpact(id, data, userId)
-        +deleteImpact(id, userId)
-        +getSummary(projectId, userId)
-        -calculateCO2(type, unitValue)
-        -verifyProjectOwnership(projectId, userId)
-    }
-
-    class ImpactRepository {
-        +create(data)
-        +findById(id)
-        +findByProjectId(projectId, filters)
-        +update(id, data)
-        +delete(id)
-        +getSummaryByProjectId(projectId)
-    }
-
-    class AuthController {
-        -authService: AuthService
-        +register(req, res)
-        +login(req, res)
-    }
-
-    class AuthService {
-        -userRepository: UserRepository
-        +register(data)
-        +login(data)
-        -hashPassword(password)
-        -comparePassword(plain, hashed)
-        -generateToken(userId)
-    }
-
-    class UserRepository {
-        +create(data)
-        +findByEmail(email)
-        +findById(id)
-    }
-
-    ImpactEvent <|-- ComputeEvent
-    ImpactEvent <|-- StorageEvent
-    ImpactEvent <|-- NetworkEvent
-    ImpactEvent <|-- ApiCallEvent
-
-    ProjectController --> ProjectService
-    ProjectService --> ProjectRepository
-
-    ImpactController --> ImpactService
-    ImpactService --> ImpactRepository
-    ImpactService --> ProjectRepository
-    ImpactService ..> ImpactEvent : uses
-
-    AuthController --> AuthService
-    AuthService --> UserRepository
+```
+GreenPulse/
+├── backend/
+│   ├── src/
+│   │   ├── server.ts                       # Entry point
+│   │   ├── app.ts                          # Express app configuration
+│   │   ├── config/
+│   │   │   └── prisma.ts                   # Prisma client singleton
+│   │   ├── models/
+│   │   │   └── ImpactEvent.ts              # Abstract class + subclasses (Polymorphism)
+│   │   ├── repositories/
+│   │   │   ├── impact.repository.ts        # ImpactLog data access
+│   │   │   ├── project.repository.ts       # Project data access
+│   │   │   └── user.repository.ts          # User data access
+│   │   ├── services/
+│   │   │   ├── impact.service.ts           # CO2 calculation + Factory Pattern
+│   │   │   ├── project.service.ts          # Project business logic
+│   │   │   └── auth.service.ts             # JWT auth + password hashing
+│   │   ├── controllers/
+│   │   │   ├── impact.controller.ts        # Impact HTTP handlers
+│   │   │   ├── project.controller.ts       # Project HTTP handlers
+│   │   │   └── auth.controller.ts          # Auth HTTP handlers
+│   │   ├── routes/
+│   │   │   ├── impact.routes.ts            # /api/projects/:id/impacts
+│   │   │   ├── project.routes.ts           # /api/projects
+│   │   │   └── auth.routes.ts              # /api/auth
+│   │   ├── middleware/
+│   │   │   ├── auth.middleware.ts           # JWT verification
+│   │   │   └── validation.middleware.ts     # Zod schema validation
+│   │   └── utils/
+│   │       └── interfaces.ts               # TypeScript DTOs & interfaces
+│   ├── prisma/
+│   │   └── schema.prisma                   # Database schema
+│   ├── package.json
+│   └── tsconfig.json
+├── idea.md                                 # Full project vision & scope
+├── ErDiagram.md                            # Entity-Relationship diagram
+├── classDiagram.md                         # Class diagram (UML)
+├── sequenceDiagram.md                      # Sequence diagram
+├── useCaseDiagram.md                       # Use case diagram
+└── README.md
 ```
 
 ---
 
-## Data Model
-
-```
-User (1) ──→ (many) Projects (1) ──→ (many) ImpactLogs
-```
-
----
-
-## Project Structure
-
-```
-src/
-├── server.ts                       # Entry point
-├── app.ts                          # Express app configuration
-├── config/
-│   └── prisma.ts                   # Prisma client singleton
-├── models/
-│   └── ImpactEvent.ts              # OOP classes (Inheritance & Polymorphism)
-├── repositories/                   # Data Access Layer
-│   ├── impact.repository.ts
-│   ├── project.repository.ts
-│   └── user.repository.ts
-├── services/                       # Business Logic Layer
-│   ├── impact.service.ts
-│   ├── project.service.ts
-│   └── auth.service.ts
-├── controllers/                    # HTTP Request Handlers
-│   ├── impact.controller.ts
-│   ├── project.controller.ts
-│   └── auth.controller.ts
-├── routes/                         # API Route Definitions
-│   ├── impact.routes.ts
-│   ├── project.routes.ts
-│   └── auth.routes.ts
-├── middleware/                     # Validation & Authentication
-│   ├── auth.middleware.ts
-│   └── validation.middleware.ts
-└── utils/
-    └── interfaces.ts               # TypeScript interfaces & DTOs
-
-prisma/
-└── schema.prisma                   # Database schema
-```
-
----
-
-## Setup Instructions
+## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js (v18+)
-- MySQL (running locally)
-- npm
+
+- **Node.js** v18 or higher
+- **MySQL** 8.0+ (running locally or remote)
+- **npm** v9+
 
 ### Installation
 
-1. **Clone the repository**
 ```bash
+# 1. Clone the repository
 git clone https://github.com/IronwallxR5/GreenPulse.git
-cd GreenPulse
-```
+cd GreenPulse/backend
 
-2. **Install dependencies**
-```bash
+# 2. Install dependencies
 npm install
+
+# 3. Set up environment variables
+cp .env.example .env
+# Edit .env with your MySQL credentials and a strong JWT secret
 ```
 
-3. **Configure environment variables**
+### Environment Configuration
 
-Create a `.env` file in the root directory:
+Create `backend/.env` with the following:
 
 ```env
-DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/GreenPulse"
+DATABASE_URL="mysql://USER:PASSWORD@localhost:3306/greenpulse"
 PORT=8080
 NODE_ENV=development
 JWT_SECRET="your-super-secret-key-min-32-characters"
 JWT_EXPIRES_IN=7d
 ```
 
-4. **Set up the database**
+### Database Setup
+
 ```bash
-npx prisma migrate dev --name initial_schema
+# Generate Prisma client and run migrations
+npx prisma migrate dev --name init
 npx prisma generate
 ```
 
-5. **Run the development server**
+### Run the Server
+
 ```bash
+# Development (hot reload)
 npm run dev
-```
 
-Server will start at `http://localhost:8080`
-
-### Build for Production
-```bash
+# Production
 npm run build
 npm start
 ```
 
+> Server starts at `http://localhost:8080`
+
 ---
 
-## API Documentation
+## 📡 API Reference
 
 ### Base URL
+
 ```
 http://localhost:8080
 ```
 
-### Authentication Endpoints
+All protected endpoints require: `Authorization: Bearer <token>`
 
-#### Register User
-```http
-POST /api/auth/register
-Content-Type: application/json
+---
 
+### 🔐 Authentication
+
+<details>
+<summary><b>POST</b> <code>/api/auth/register</code> — Register a new user</summary>
+
+**Request:**
+```json
 {
   "email": "user@example.com",
   "password": "password123",
@@ -346,7 +234,7 @@ Content-Type: application/json
 }
 ```
 
-**Response:**
+**Response** `201 Created`:
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiIs...",
@@ -357,74 +245,93 @@ Content-Type: application/json
   }
 }
 ```
+</details>
 
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
+<details>
+<summary><b>POST</b> <code>/api/auth/login</code> — Login</summary>
 
+**Request:**
+```json
 {
   "email": "user@example.com",
   "password": "password123"
 }
 ```
 
----
-
-### Project Endpoints (Protected)
-
-All protected endpoints require: `Authorization: Bearer <token>`
-
-#### Create Project
-```http
-POST /api/projects
-Content-Type: application/json
-
+**Response** `200 OK`:
+```json
 {
-  "name": "Cloud Infrastructure",
-  "description": "Main cloud setup"
+  "token": "eyJhbGciOiJIUzI1NiIs...",
+  "user": { "id": 1, "email": "user@example.com", "name": "John Doe" }
 }
 ```
-
-#### Get All Projects
-```http
-GET /api/projects
-```
-
-#### Get Single Project
-```http
-GET /api/projects/:id
-```
-
-#### Update Project
-```http
-PUT /api/projects/:id
-Content-Type: application/json
-
-{
-  "name": "Updated Name"
-}
-```
-
-#### Delete Project
-```http
-DELETE /api/projects/:id
-```
-
-#### Get Project CO2 Summary
-```http
-GET /api/projects/:id/summary
-```
+</details>
 
 ---
 
-### Impact Endpoints (Protected, Nested under Projects)
+### 📂 Projects (Protected)
 
-#### Create Impact
-```http
-POST /api/projects/:projectId/impacts
-Content-Type: application/json
+<details>
+<summary><b>POST</b> <code>/api/projects</code> — Create project</summary>
 
+```json
+{ "name": "Cloud Infrastructure", "description": "Main cloud setup" }
+```
+**Response** `201 Created`
+</details>
+
+<details>
+<summary><b>GET</b> <code>/api/projects</code> — List all projects</summary>
+
+Returns all projects owned by the authenticated user.
+</details>
+
+<details>
+<summary><b>GET</b> <code>/api/projects/:id</code> — Get single project</summary>
+
+Returns project details with impact log count.
+</details>
+
+<details>
+<summary><b>PUT</b> <code>/api/projects/:id</code> — Update project</summary>
+
+```json
+{ "name": "Updated Name", "description": "Updated description" }
+```
+</details>
+
+<details>
+<summary><b>DELETE</b> <code>/api/projects/:id</code> — Delete project</summary>
+
+Cascade deletes all associated impact logs.
+</details>
+
+<details>
+<summary><b>GET</b> <code>/api/projects/:id/summary</code> — Get CO2 summary</summary>
+
+**Response** `200 OK`:
+```json
+{
+  "totalCO2": 78,
+  "totalLogs": 3,
+  "byType": [
+    { "type": "COMPUTE", "totalCO2": 24, "count": 1 },
+    { "type": "STORAGE", "totalCO2": 24, "count": 1 },
+    { "type": "NETWORK", "totalCO2": 30, "count": 1 }
+  ]
+}
+```
+</details>
+
+---
+
+### 📊 Impact Events (Protected, nested under Projects)
+
+<details>
+<summary><b>POST</b> <code>/api/projects/:projectId/impacts</code> — Log impact event</summary>
+
+**Request:**
+```json
 {
   "name": "AWS EC2 Instance",
   "description": "Production server running 24/7",
@@ -433,13 +340,9 @@ Content-Type: application/json
 }
 ```
 
-**Impact Types:**
-- `COMPUTE` - Cloud compute (hours)
-- `STORAGE` - Data storage (GB/month)
-- `NETWORK` - Data transfer (GB)
-- `API_CALL` - API requests (count)
+**Impact Types:** `COMPUTE` | `STORAGE` | `NETWORK` | `API_CALL`
 
-**Response:**
+**Response** `201 Created`:
 ```json
 {
   "id": 1,
@@ -453,117 +356,105 @@ Content-Type: application/json
   "updatedAt": "2026-02-12T04:57:46.251Z"
 }
 ```
+</details>
 
-#### Get All Impacts (with filters)
-```http
-GET /api/projects/:projectId/impacts?type=COMPUTE&search=AWS&sortBy=carbonScore&sortOrder=desc&page=1&limit=10
-```
+<details>
+<summary><b>GET</b> <code>/api/projects/:projectId/impacts</code> — List impacts (with filters)</summary>
 
 **Query Parameters:**
+
 | Parameter | Description | Options |
 |-----------|-------------|---------|
 | `type` | Filter by impact type | `COMPUTE`, `STORAGE`, `NETWORK`, `API_CALL` |
 | `search` | Search in name/description | any string |
 | `sortBy` | Sort field | `createdAt`, `carbonScore`, `name` |
 | `sortOrder` | Sort direction | `asc`, `desc` |
-| `page` | Page number | default: 1 |
-| `limit` | Items per page | default: 10 |
+| `page` | Page number | default: `1` |
+| `limit` | Items per page | default: `10` |
 
-#### Get Single Impact
-```http
-GET /api/projects/:projectId/impacts/:id
+**Example:**
 ```
-
-#### Update Impact
-```http
-PUT /api/projects/:projectId/impacts/:id
-Content-Type: application/json
-
-{
-  "name": "Updated Name",
-  "unitValue": 30
-}
+GET /api/projects/1/impacts?type=COMPUTE&search=AWS&sortBy=carbonScore&sortOrder=desc&page=1&limit=10
 ```
+</details>
 
-#### Delete Impact
-```http
-DELETE /api/projects/:projectId/impacts/:id
-```
+<details>
+<summary><b>GET</b> <code>/api/projects/:projectId/impacts/:id</code> — Get single impact</summary>
 
-#### Get Impact Summary for Project
-```http
-GET /api/projects/:projectId/impacts/summary
-```
+Returns impact details with associated project info.
+</details>
 
-**Response:**
+<details>
+<summary><b>PUT</b> <code>/api/projects/:projectId/impacts/:id</code> — Update impact</summary>
+
 ```json
-{
-  "totalCO2": 78,
-  "totalLogs": 3,
-  "byType": [
-    { "type": "COMPUTE", "totalCO2": 24, "count": 1 },
-    { "type": "STORAGE", "totalCO2": 24, "count": 1 },
-    { "type": "NETWORK", "totalCO2": 30, "count": 1 }
-  ]
-}
+{ "name": "Updated Name", "unitValue": 30 }
 ```
+Carbon score is automatically recalculated when `type` or `unitValue` changes.
+</details>
+
+<details>
+<summary><b>DELETE</b> <code>/api/projects/:projectId/impacts/:id</code> — Delete impact</summary>
+</details>
+
+<details>
+<summary><b>GET</b> <code>/api/projects/:projectId/impacts/summary</code> — Get impact summary</summary>
+
+Returns aggregated CO2 totals and breakdown by type for the project.
+</details>
 
 ---
 
-## CO2 Calculation Formulas
+## 🧪 Testing with cURL
 
-| Impact Type | Formula | Example |
-|------------|---------|---------|
-| **COMPUTE** | `unitValue × 0.5 kg` | 24 hours → 12 kg CO2 |
-| **STORAGE** | `unitValue × 0.12 kg` | 100 GB → 12 kg CO2 |
-| **NETWORK** | `unitValue × 0.06 kg` | 50 GB → 3 kg CO2 |
-| **API_CALL** | `unitValue × 0.0001 kg` | 10,000 calls → 1 kg CO2 |
-
----
-
-## Testing the API
-
-### Using cURL
-
-**Register:**
 ```bash
+# Register
 curl -X POST http://localhost:8080/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"pass1234","name":"Test User"}'
-```
 
-**Login & Save Token:**
-```bash
+# Login & save token
 TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"email":"test@example.com","password":"pass1234"}' | jq -r '.token')
-```
 
-**Create Project:**
-```bash
+# Create project
 curl -X POST http://localhost:8080/api/projects \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"My Cloud","description":"Cloud infrastructure"}'
-```
 
-**Create Impact:**
-```bash
+# Log an impact event
 curl -X POST http://localhost:8080/api/projects/1/impacts \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $TOKEN" \
   -d '{"name":"EC2 Server","type":"COMPUTE","unitValue":24}'
-```
 
-**Get Project Summary:**
-```bash
+# Get project CO2 summary
 curl http://localhost:8080/api/projects/1/summary \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
 
-## Database Schema
+## 🔬 CO2 Calculation Formulas
+
+Each impact type uses a scientifically-informed emission factor applied through **polymorphic method dispatch**:
+
+| Impact Type | Formula | Emission Factor | Example |
+|-------------|---------|-----------------|---------|
+| **COMPUTE** | `unitValue × 0.5` | 0.5 kg CO2/hour | 24 hours → **12 kg CO2** |
+| **STORAGE** | `unitValue × 0.12` | 0.12 kg CO2/GB/month | 100 GB → **12 kg CO2** |
+| **NETWORK** | `unitValue × 0.06` | 0.06 kg CO2/GB transferred | 50 GB → **3 kg CO2** |
+| **API_CALL** | `unitValue × 0.0001` | 0.0001 kg CO2/request | 10,000 calls → **1 kg CO2** |
+
+---
+
+## 🗄 Database Schema
+
+```
+User (1) ──→ (many) Projects (1) ──→ (many) ImpactLogs
+```
 
 ```prisma
 model User {
@@ -579,18 +470,19 @@ model User {
 model Project {
   id          Int         @id @default(autoincrement())
   name        String
-  description String?
+  description String?     @db.Text
   userId      Int
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   impactLogs  ImpactLog[]
+  @@index([userId])
 }
 
 model ImpactLog {
   id          Int        @id @default(autoincrement())
   name        String
-  description String?
+  description String?    @db.Text
   type        ImpactType
   unitValue   Float
   carbonScore Float
@@ -598,6 +490,9 @@ model ImpactLog {
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   project     Project    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@index([projectId])
+  @@index([type])
+  @@index([createdAt])
 }
 
 enum ImpactType {
@@ -610,25 +505,52 @@ enum ImpactType {
 
 ---
 
-## Future Enhancements
+## 🗺 Roadmap
 
-- Role-based access control (ADMIN/USER)
-- Date range filtering for time-based analytics
-- PDF report generation for carbon footprint
-- Cloud provider API integration for automated tracking
-- Real-time dashboard with WebSocket updates
-- Multi-organization support
+| Feature | Status |
+|---------|--------|
+| Polymorphic CO2 calculation engine | ✅ Done |
+| Project-based tracking with CRUD | ✅ Done |
+| Impact event logging with auto-calculation | ✅ Done |
+| JWT authentication | ✅ Done |
+| Search, filter, sort, pagination | ✅ Done |
+| Request validation (Zod) | ✅ Done |
+| Role-based access control (RBAC) | 🔜 Planned |
+| PDF/CSV report generation (Strategy Pattern) | 🔜 Planned |
+| Carbon threshold alerts (Observer Pattern) | 🔜 Planned |
+| Organization & team management | 🔜 Planned |
+| Analytics dashboard with time-series charts | 🔜 Planned |
+| Cloud provider API integration (AWS/GCP) | 🔜 Planned |
+| Audit logging for compliance | 🔜 Planned |
+| Real-time WebSocket updates | 🔜 Planned |
 
 ---
 
-## Contributing
+## 📚 Documentation
 
-This project was built as part of the SESD Workshop assignment demonstrating clean OOP architecture in Node.js with TypeScript.
+Detailed UML and design documentation is available in the repository root:
 
-## Author
+| Document | Description |
+|----------|-------------|
+| [idea.md](idea.md) | Full project vision, problem statement, and scope |
+| [ErDiagram.md](ErDiagram.md) | Entity-Relationship diagram (Mermaid) |
+| [classDiagram.md](classDiagram.md) | Class diagram with OOP principles |
+| [sequenceDiagram.md](sequenceDiagram.md) | End-to-end request lifecycle |
+| [useCaseDiagram.md](useCaseDiagram.md) | Actor-based use case diagram |
+
+---
+
+## 🤝 Contributing
+
+This project was built as part of the **SESD Workshop** assignment demonstrating clean OOP architecture in Node.js with TypeScript. Contributions are welcome — feel free to open issues and pull requests.
+
+---
+
+## 👤 Author
 
 **Padam Rathi**
+- GitHub: [@IronwallxR5](https://github.com/IronwallxR5)
 
-## License
+## 📄 License
 
-ISC
+This project is licensed under the **ISC License**.

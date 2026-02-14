@@ -2,20 +2,22 @@
 
 ## Overview
 
-This Entity-Relationship diagram shows the database schema for the GreenPulse platform. All tables, columns, types, and relationships are defined below.
+This Entity-Relationship diagram shows the database schema for the GreenPulse platform. **Implemented** entities are currently live in the codebase. **Planned** entities represent the future roadmap and are not yet implemented.
+
+> [!NOTE]
+> Entities marked with `🔜 Planned` are part of the architectural vision described in `idea.md` and will be implemented in future milestones.
 
 ---
 
 ```mermaid
 erDiagram
+    %% ===== IMPLEMENTED =====
+
     USERS {
         int id PK
         varchar email UK
-        varchar password_hash
+        varchar password
         varchar name
-        enum role "USER | ADMIN"
-        int organization_id FK
-        boolean is_active
         timestamp created_at
         timestamp updated_at
     }
@@ -40,6 +42,8 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+
+    %% ===== PLANNED (Not Yet Implemented) =====
 
     ORGANIZATIONS {
         int id PK
@@ -141,25 +145,25 @@ erDiagram
 
 ## Table Summary
 
-| Table | Description | Key Relationships |
-|-------|-------------|-------------------|
-| `USERS` | All platform users authenticated via JWT | → Projects, Org Members, Notifications |
-| `PROJECTS` | Carbon tracking boundaries (apps, services) | ← User (owner), → Impact Logs, Reports |
-| `IMPACT_LOGS` | Individual infrastructure events with carbon scores | ← Project |
-| `ORGANIZATIONS` | Multi-tenant groups for enterprise carbon tracking | → Org Members, ← Users |
-| `ORGANIZATION_MEMBERS` | Junction table for organization membership | ← Organization, ← User |
-| `REPORTS` | Generated compliance reports (PDF/CSV) | ← Project, ← User |
-| `NOTIFICATIONS` | In-app notifications for alerts and system events | ← User |
-| `CARBON_THRESHOLDS` | User-defined CO2 limits per project | ← Project, ← User |
-| `AUDIT_LOGS` | Tamper-proof action log for compliance | ← User |
-| `PLATFORM_CONFIG` | System-wide configuration key-value pairs | ← User (admin) |
+| Status | Table | Description | Key Relationships |
+|--------|-------|-------------|-------------------|
+| ✅ | `USERS` | All platform users authenticated via JWT | → Projects |
+| ✅ | `PROJECTS` | Carbon tracking boundaries (apps, services) | ← User (owner), → Impact Logs |
+| ✅ | `IMPACT_LOGS` | Individual infrastructure events with carbon scores | ← Project |
+| 🔜 | `ORGANIZATIONS` | Multi-tenant groups for enterprise carbon tracking | → Org Members, ← Users |
+| 🔜 | `ORGANIZATION_MEMBERS` | Junction table for organization membership | ← Organization, ← User |
+| 🔜 | `REPORTS` | Generated compliance reports (PDF/CSV) | ← Project, ← User |
+| 🔜 | `NOTIFICATIONS` | In-app notifications for alerts and system events | ← User |
+| 🔜 | `CARBON_THRESHOLDS` | User-defined CO2 limits per project | ← Project, ← User |
+| 🔜 | `AUDIT_LOGS` | Tamper-proof action log for compliance | ← User |
+| 🔜 | `PLATFORM_CONFIG` | System-wide configuration key-value pairs | ← User (admin) |
 
 ---
 
 ## Key Indexes
 
 | Table | Index | Purpose |
-|-------|-------|---------|
+|-------|-------|---------| 
 | `USERS` | `(email)` | Fast login lookups, duplicate prevention |
 | `PROJECTS` | `(user_id)` | List all projects owned by a user |
 | `IMPACT_LOGS` | `(project_id)` | Fast retrieval of all events for a project |
