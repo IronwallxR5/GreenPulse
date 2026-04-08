@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Leaf, LogOut, LayoutDashboard, User } from 'lucide-react';
+import { Leaf, LogOut, LayoutDashboard, User, BarChart3 } from 'lucide-react';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -31,6 +31,17 @@ export default function Layout() {
             >
               <LayoutDashboard className="h-4 w-4" />
               Dashboard
+            </Link>
+            <Link
+              to="/analytics"
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                location.pathname === '/analytics'
+                  ? 'bg-green-50 text-green-700'
+                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+            >
+              <BarChart3 className="h-4 w-4" />
+              Analytics
             </Link>
           </nav>
 
