@@ -19,6 +19,7 @@ import {
   ArrowLeft, Plus, Trash2, Cloud, Database, Network, Webhook,
   Loader2, Zap, TrendingUp, Activity, Search, X,
   ArrowUpDown, ChevronLeft, ChevronRight, SlidersHorizontal,
+  Download, FileText, FileSpreadsheet
 } from 'lucide-react';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -124,9 +125,16 @@ export default function ProjectView() {
     mutationFn: (impactId: number) => impactService.delete(projectId, impactId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
-      // If we deleted the last item on a page > 1, go back
       if (impacts.length === 1 && page > 1) setPage((p) => p - 1);
     },
+  });
+
+  const downloadMutation = useMutation({
+    mutationFn: (format: 'pdf' | 'csv') => projectService.downloadReport(projectId, format),
+    onError: (err: any) => {
+      console.error('Failed to download report', err);
+      alert('Failed to download report. Please try again.');
+    }
   });
 
   const handleCreate = (e: React.FormEvent) => {
@@ -181,18 +189,49 @@ export default function ProjectView() {
     <div className="space-y-8">
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-4">
-        <button
-          onClick={() => navigate('/dashboard')}
-          className="flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-          {project.description && (
-            <p className="text-gray-500 text-sm mt-0.5">{project.description}</p>
-          )}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
+            {project.description && (
+              <p className="text-gray-500 text-sm mt-0.5">{project.description}</p>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2 text-gray-700 font-medium bg-white hover:bg-gray-50 border-gray-200"
+            onClick={() => downloadMutation.mutate('pdf')}
+            disabled={downloadMutation.isPending}
+          >
+            {downloadMutation.isPending && downloadMutation.variables === 'pdf' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="h-4 w-4 text-red-500" />
+            )}
+            PDF Report
+          </Button>
+          <Button 
+            variant="outline" 
+            className="gap-2 text-gray-700 font-medium bg-white hover:bg-gray-50 border-gray-200"
+            onClick={() => downloadMutation.mutate('csv')}
+            disabled={downloadMutation.isPending}
+          >
+            {downloadMutation.isPending && downloadMutation.variables === 'csv' ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="h-4 w-4 text-green-600" />
+            )}
+            CSV Report
+          </Button>
         </div>
       </div>
 
