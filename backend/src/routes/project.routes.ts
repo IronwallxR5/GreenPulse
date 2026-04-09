@@ -28,6 +28,8 @@ class ProjectRoutes implements Routes {
 
     this.router.get(`${this.path}/:id/summary`, authenticateToken, this.projectController.getProjectSummary);
 
+    this.router.get(`${this.path}/:id/report`, authenticateToken, this.projectController.getProjectReport);
+
     this.router.put(
       `${this.path}/:id`,
       authenticateToken,

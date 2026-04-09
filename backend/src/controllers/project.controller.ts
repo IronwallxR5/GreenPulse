@@ -1,12 +1,17 @@
 import { Request, Response } from 'express';
 import ProjectService from '../services/project.service';
+import { ReportingService } from '../services/reporting/ReportingService';
+import { PdfReportStrategy } from '../services/reporting/PdfReportStrategy';
+import { CsvReportStrategy } from '../services/reporting/CsvReportStrategy';
 import { StatusCodes } from 'http-status-codes';
 
 class ProjectController {
   private projectService: ProjectService;
+  private reportingService: ReportingService;
 
   constructor() {
     this.projectService = new ProjectService();
+    this.reportingService = new ReportingService();
   }
 
   createProject = async (req: Request, res: Response): Promise<void> => {
@@ -78,6 +83,37 @@ class ProjectController {
       res.status(StatusCodes.OK).json(summary);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to get project summary';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  getProjectReport = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      const format = req.query.format as string || 'pdf';
+
+      await this.projectService.getProjectById(id, userId);
+
+      if (format.toLowerCase() === 'csv') {
+        this.reportingService.setStrategy(new CsvReportStrategy());
+      } else {
+        this.reportingService.setStrategy(new PdfReportStrategy());
+      }
+
+      const { file, contentType, filename } = await this.reportingService.generateReport(id);
+
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      
+      if (file instanceof Buffer) {
+        res.send(file);
+      } else {
+        res.send(file);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to generate report';
       const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
       res.status(status).json({ message });
     }
