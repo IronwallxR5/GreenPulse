@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -30,7 +30,7 @@ model User {
 model Project {
   id            Int          @id @default(autoincrement())
   name          String
-  description   String?      @db.Text
+  description   String?
   userId        Int
   carbonBudget  Float?       // Optional CO2 threshold in kg (null = no limit set)
   createdAt     DateTime     @default(now())
@@ -47,7 +47,7 @@ model Project {
 model ImpactLog {
   id          Int        @id @default(autoincrement())
   name        String
-  description String?    @db.Text
+  description String?
   type        ImpactType
   unitValue   Float
   carbonScore Float
@@ -66,7 +66,7 @@ model ImpactLog {
 model Alert {
   id          Int      @id @default(autoincrement())
   projectId   Int
-  message     String   @db.Text
+  message     String
   totalCO2    Float    // Total CO2 at the time of the alert
   budget      Float    // The budget threshold that was exceeded
   isRead      Boolean  @default(false)
