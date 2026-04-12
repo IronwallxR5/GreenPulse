@@ -9,6 +9,7 @@ import Register from './pages/Auth/Register';
 import Dashboard from './pages/Dashboard';
 import ProjectView from './pages/ProjectView';
 import Analytics from './pages/Analytics';
+import Profile from './pages/Profile';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -28,6 +29,7 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="projects/:id" element={<ProjectView />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="profile" element={<Profile />} />
         </Route>
         
         <Route path="*" element={

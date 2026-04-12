@@ -1,10 +1,16 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Leaf, LogOut, LayoutDashboard, User, BarChart3 } from 'lucide-react';
 
 export default function Layout() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -47,14 +53,22 @@ export default function Layout() {
 
           {/* User section */}
           <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-200">
+            {/* Clickable profile chip */}
+            <Link
+              to="/profile"
+              className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors ${
+                location.pathname === '/profile'
+                  ? 'bg-green-50 border-green-200 text-green-700'
+                  : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100'
+              }`}
+            >
               <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
                 <User className="h-3.5 w-3.5 text-green-700" />
               </div>
-              <span className="text-sm font-medium text-gray-700">{user?.name}</span>
-            </div>
+              <span className="text-sm font-medium">{user?.name}</span>
+            </Link>
             <button
-              onClick={logout}
+              onClick={handleLogout}
               title="Sign out"
               className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors border border-transparent hover:border-red-100"
             >

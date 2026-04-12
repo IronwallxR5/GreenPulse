@@ -4,6 +4,8 @@ export interface User {
   id: number;
   email: string;
   name: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface AuthResponse {
@@ -19,6 +21,11 @@ export const authService = {
 
   async login(data: any): Promise<AuthResponse> {
     const res = await api.post('/auth/login', data);
+    return res.data;
+  },
+
+  async me(): Promise<User> {
+    const res = await api.get('/auth/me');
     return res.data;
   },
 };

@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '../../services/project.service';
 import type { Project } from '../../services/project.service';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, FolderOpen, ArrowRight, Loader2, Leaf } from 'lucide-react';
+import { Plus, Trash2, FolderOpen, ArrowRight, Loader2, Leaf, Pencil } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
@@ -13,9 +13,17 @@ import { useAuth } from '../../context/AuthContext';
 export default function Dashboard() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // ── Create project state ─────────────────────────────────────────────────
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+
+  // ── Edit project state ───────────────────────────────────────────────────
+  const [editOpen, setEditOpen]             = useState(false);
+  const [editTarget, setEditTarget]         = useState<Project | null>(null);
+  const [editName, setEditName]             = useState('');
+  const [editDescription, setEditDescription] = useState('');
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ['projects'],
@@ -39,10 +47,36 @@ export default function Dashboard() {
     },
   });
 
+  const editMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { name?: string; description?: string } }) =>
+      projectService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      setEditOpen(false);
+      setEditTarget(null);
+    },
+  });
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
     createMutation.mutate({ name: name.trim(), description: description.trim() || undefined });
+  };
+
+  const openEditDialog = (project: Project) => {
+    setEditTarget(project);
+    setEditName(project.name);
+    setEditDescription(project.description ?? '');
+    setEditOpen(true);
+  };
+
+  const handleEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget || !editName.trim()) return;
+    editMutation.mutate({
+      id: editTarget.id,
+      data: { name: editName.trim(), description: editDescription.trim() || undefined },
+    });
   };
 
   return (
@@ -106,7 +140,7 @@ export default function Dashboard() {
                 className="w-full bg-green-600 hover:bg-green-700 text-white"
               >
                 {createMutation.isPending ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</>
                 ) : (
                   'Create Project'
                 )}
@@ -191,14 +225,24 @@ export default function Dashboard() {
                         {project.description || 'No description provided.'}
                       </p>
                     </div>
-                    <button
-                      onClick={() => deleteMutation.mutate(project.id)}
-                      disabled={deleteMutation.isPending}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 flex-shrink-0"
-                      title="Delete project"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {/* Action buttons — visible on hover */}
+                    <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 flex-shrink-0">
+                      <button
+                        onClick={() => openEditDialog(project)}
+                        className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500"
+                        title="Edit project"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => deleteMutation.mutate(project.id)}
+                        disabled={deleteMutation.isPending}
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"
+                        title="Delete project"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
@@ -220,6 +264,66 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* ── Edit Project Dialog ──────────────────────────────────────────────── */}
+      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) setEditTarget(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-blue-100 flex items-center justify-center">
+                <Pencil className="h-4 w-4 text-blue-600" />
+              </div>
+              Edit Project
+            </DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-gray-700 font-medium">
+                Project Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="e.g. Cloud API v2"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="h-10"
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-gray-700 font-medium">
+                Description <span className="text-gray-400 font-normal">(optional)</span>
+              </Label>
+              <Input
+                placeholder="Brief description of the project"
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                className="h-10"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setEditOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={editMutation.isPending || !editName.trim()}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {editMutation.isPending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</>
+                ) : (
+                  'Save Changes'
+                )}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -5,6 +5,7 @@ export interface Project {
   name: string;
   description: string | null;
   userId: number;
+  carbonBudget: number | null;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -20,6 +21,16 @@ export interface ProjectSummary {
     totalCO2: number;
     count: number;
   }[];
+}
+
+export interface ProjectAlert {
+  id: number;
+  projectId: number;
+  message: string;
+  totalCO2: number;
+  budget: number;
+  isRead: boolean;
+  createdAt: string;
 }
 
 export const projectService = {
@@ -40,10 +51,9 @@ export const projectService = {
 
   async downloadReport(id: number, format: 'pdf' | 'csv'): Promise<void> {
     const res = await api.get(`/projects/${id}/report?format=${format}`, {
-      responseType: 'blob', // crucial for handling binary file downloads
+      responseType: 'blob',
     });
 
-    // Extract filename from Content-Disposition header if available
     const contentDisposition = res.headers['content-disposition'];
     let filename = `greenpulse-report-${id}.${format}`;
     if (contentDisposition) {
@@ -53,7 +63,6 @@ export const projectService = {
       }
     }
 
-    // Create a temporary link to trigger the download
     const url = window.URL.createObjectURL(new Blob([res.data]));
     const link = document.createElement('a');
     link.href = url;
@@ -76,5 +85,19 @@ export const projectService = {
 
   async delete(id: number): Promise<void> {
     await api.delete(`/projects/${id}`);
+  },
+
+  async setBudget(id: number, carbonBudget: number | null): Promise<Project> {
+    const res = await api.put(`/projects/${id}/budget`, { carbonBudget });
+    return res.data;
+  },
+
+  async getAlerts(id: number): Promise<ProjectAlert[]> {
+    const res = await api.get(`/projects/${id}/alerts`);
+    return res.data;
+  },
+
+  async markAlertsRead(id: number): Promise<void> {
+    await api.patch(`/projects/${id}/alerts/read`);
   },
 };

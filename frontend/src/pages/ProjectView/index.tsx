@@ -2,6 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { projectService } from '../../services/project.service';
+import type { ProjectAlert } from '../../services/project.service';
 import {
   impactService,
   type ImpactLog,
@@ -19,7 +20,7 @@ import {
   ArrowLeft, Plus, Trash2, Cloud, Database, Network, Webhook,
   Loader2, Zap, TrendingUp, Activity, Search, X,
   ArrowUpDown, ChevronLeft, ChevronRight, SlidersHorizontal,
-  Download, FileText, FileSpreadsheet
+  FileText, FileSpreadsheet, Pencil, Bell, BellOff, ShieldAlert
 } from 'lucide-react';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -65,12 +66,23 @@ export default function ProjectView() {
   // Debounce search so we don't fire on every keystroke
   const search = useDebounce(searchInput, 400);
 
-  // ── Log-event dialog state ───────────────────────────────────────────────
+  // ── Create-event dialog state ────────────────────────────────────────────
   const [open, setOpen]         = useState(false);
   const [formData, setFormData] = useState({
     name: '', description: '', type: 'COMPUTE' as ImpactType, unitValue: '',
   });
   const [formError, setFormError] = useState('');
+
+  // ── Edit-event dialog state ───────────────────────────────────────────────
+  const [editOpen, setEditOpen]   = useState(false);
+  const [editTarget, setEditTarget] = useState<ImpactLog | null>(null);
+  const [editData, setEditData]   = useState({
+    name: '', description: '', type: 'COMPUTE' as ImpactType, unitValue: '',
+  });
+  const [editError, setEditError] = useState('');
+
+  // ── Budget state ────────────────────────────────────────────────────────────
+  const [budgetInput, setBudgetInput] = useState('');
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: project, isLoading: projectLoading } = useQuery({
@@ -82,6 +94,13 @@ export default function ProjectView() {
     queryKey: ['projects', projectId, 'summary'],
     queryFn: () => projectService.getSummary(projectId),
   });
+
+  const { data: alerts = [], refetch: refetchAlerts } = useQuery({
+    queryKey: ['projects', projectId, 'alerts'],
+    queryFn: () => projectService.getAlerts(projectId),
+  });
+
+  const unreadCount = alerts.filter((a: ProjectAlert) => !a.isRead).length;
 
   // ✅ All filter params are in the query key → auto-refetches on any change
   const { data: impactsData, isLoading: impactsLoading, isFetching } = useQuery({
@@ -129,12 +148,45 @@ export default function ProjectView() {
     },
   });
 
+  const editMutation = useMutation({
+    mutationFn: (payload: { impactId: number; data: any }) =>
+      impactService.update(projectId, payload.impactId, payload.data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+      setEditOpen(false);
+      setEditTarget(null);
+      setEditError('');
+    },
+    onError: (err: any) => {
+      setEditError(
+        err.response?.data?.message ??
+        err.response?.data?.errors?.[0]?.message ??
+        'Failed to update event',
+      );
+    },
+  });
+
   const downloadMutation = useMutation({
     mutationFn: (format: 'pdf' | 'csv') => projectService.downloadReport(projectId, format),
     onError: (err: any) => {
       console.error('Failed to download report', err);
       alert('Failed to download report. Please try again.');
     }
+  });
+
+  const setBudgetMutation = useMutation({
+    mutationFn: (budget: number | null) => projectService.setBudget(projectId, budget),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+      setBudgetInput('');
+    },
+  });
+
+  const markAlertsReadMutation = useMutation({
+    mutationFn: () => projectService.markAlertsRead(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'alerts'] });
+    },
   });
 
   const handleCreate = (e: React.FormEvent) => {
@@ -148,6 +200,36 @@ export default function ProjectView() {
       description: formData.description.trim() || undefined,
       type:        formData.type,
       unitValue:   unitVal,
+    });
+  };
+
+  const openEditDialog = (log: ImpactLog) => {
+    setEditTarget(log);
+    setEditData({
+      name:        log.name,
+      description: log.description ?? '',
+      type:        log.type,
+      unitValue:   String(log.unitValue),
+    });
+    setEditError('');
+    setEditOpen(true);
+  };
+
+  const handleEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTarget) return;
+    setEditError('');
+    const unitVal = parseFloat(editData.unitValue);
+    if (!editData.name.trim())           return setEditError('Event name is required');
+    if (isNaN(unitVal) || unitVal <= 0)  return setEditError('Unit value must be a positive number');
+    editMutation.mutate({
+      impactId: editTarget.id,
+      data: {
+        name:        editData.name.trim(),
+        description: editData.description.trim() || undefined,
+        type:        editData.type,
+        unitValue:   unitVal,
+      },
     });
   };
 
@@ -297,6 +379,122 @@ export default function ProjectView() {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Carbon Budget Panel ──────────────────────────────────────────── */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+              <ShieldAlert className="h-4 w-4 text-amber-600" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-gray-700">Carbon Budget</h3>
+              <p className="text-xs text-gray-400">
+                {project?.carbonBudget != null
+                  ? `Current limit: ${project.carbonBudget.toFixed(2)} kg CO₂e`
+                  : 'No budget set — an alert fires when total CO₂ exceeds this threshold'}
+              </p>
+            </div>
+          </div>
+          {project?.carbonBudget != null && (
+            <button
+              onClick={() => setBudgetMutation.mutate(null)}
+              disabled={setBudgetMutation.isPending}
+              className="text-xs text-red-500 hover:text-red-600 font-medium px-2 py-1 rounded-md hover:bg-red-50 transition-colors"
+            >
+              Clear budget
+            </button>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          <Input
+            type="number"
+            step="0.01"
+            min="0.01"
+            placeholder="Enter CO₂ threshold in kg (e.g. 100)"
+            value={budgetInput}
+            onChange={(e) => setBudgetInput(e.target.value)}
+            className="h-9 text-sm flex-1"
+          />
+          <Button
+            onClick={() => {
+              const val = parseFloat(budgetInput);
+              if (!isNaN(val) && val > 0) setBudgetMutation.mutate(val);
+            }}
+            disabled={setBudgetMutation.isPending || !budgetInput || parseFloat(budgetInput) <= 0}
+            className="bg-amber-500 hover:bg-amber-600 text-white h-9 px-4 text-sm"
+          >
+            {setBudgetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Set Budget'}
+          </Button>
+        </div>
+
+        {/* Budget progress bar (if budget set and summary loaded) */}
+        {project?.carbonBudget != null && summary != null && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs mb-1">
+              <span className="text-gray-500">Usage</span>
+              <span className={`font-semibold ${summary.totalCO2 >= project.carbonBudget ? 'text-red-600' : 'text-green-600'}`}>
+                {((summary.totalCO2 / project.carbonBudget) * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${
+                  summary.totalCO2 >= project.carbonBudget ? 'bg-red-500' : 'bg-green-500'
+                }`}
+                style={{ width: `${Math.min((summary.totalCO2 / project.carbonBudget) * 100, 100)}%` }}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">
+              {summary.totalCO2.toFixed(4)} / {project.carbonBudget.toFixed(4)} kg CO₂e
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Alerts Panel ─────────────────────────────────────────────────── */}
+      {alerts.length > 0 && (
+        <div className="bg-white rounded-xl border border-red-100 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-5 py-3 border-b border-red-50 bg-red-50">
+            <div className="flex items-center gap-2">
+              <Bell className="h-4 w-4 text-red-600" />
+              <h3 className="text-sm font-semibold text-red-700">Threshold Alerts</h3>
+              {unreadCount > 0 && (
+                <span className="text-xs font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full">
+                  {unreadCount} new
+                </span>
+              )}
+            </div>
+            {unreadCount > 0 && (
+              <button
+                onClick={() => markAlertsReadMutation.mutate()}
+                disabled={markAlertsReadMutation.isPending}
+                className="text-xs text-red-600 hover:text-red-700 font-medium flex items-center gap-1"
+              >
+                <BellOff className="h-3.5 w-3.5" />
+                Mark all read
+              </button>
+            )}
+          </div>
+          <div className="divide-y divide-red-50 max-h-48 overflow-y-auto">
+            {alerts.map((alert: ProjectAlert) => (
+              <div
+                key={alert.id}
+                className={`px-5 py-3 flex items-start gap-3 ${!alert.isRead ? 'bg-red-50/40' : ''}`}
+              >
+                <div className={`mt-0.5 w-2 h-2 rounded-full flex-shrink-0 ${!alert.isRead ? 'bg-red-500' : 'bg-gray-300'}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm text-gray-700">{alert.message}</p>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {new Date(alert.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -550,7 +748,7 @@ export default function ProjectView() {
                   <TableHead className="font-semibold text-gray-600 text-right">Carbon Score</TableHead>
                   <TableHead className="font-semibold text-gray-600">Intensity</TableHead>
                   <TableHead className="font-semibold text-gray-600 hidden sm:table-cell">Date</TableHead>
-                  <TableHead className="w-[52px]" />
+                  <TableHead className="w-[88px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -589,14 +787,23 @@ export default function ProjectView() {
                         })}
                       </TableCell>
                       <TableCell>
-                        <button
-                          onClick={() => deleteMutation.mutate(log.id)}
-                          disabled={deleteMutation.isPending}
-                          className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
-                          title="Delete event"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openEditDialog(log)}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                            title="Edit event"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteMutation.mutate(log.id)}
+                            disabled={deleteMutation.isPending}
+                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            title="Delete event"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -667,6 +874,110 @@ export default function ProjectView() {
           )}
         </div>
       </div>
+
+      {/* ── Edit Impact Dialog ──────────────────────────────────────────────── */}
+      <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) setEditError(''); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Impact Event</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleEdit} className="space-y-4 pt-2">
+            <div className="space-y-1.5">
+              <Label className="text-gray-700 font-medium">
+                Event Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="e.g. Image processing batch"
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                className="h-10"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-gray-700 font-medium">
+                Event Type <span className="text-red-500">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-2">
+                {IMPACT_TYPES.map((t) => {
+                  const cfg = TYPE_CONFIG[t];
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setEditData({ ...editData, type: t })}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
+                        editData.type === t
+                          ? 'border-green-500 bg-green-50 text-green-700'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className={cfg.color}>{cfg.icon}</span>
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-gray-700 font-medium">
+                Unit Value <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="number"
+                step="0.01"
+                min="0.01"
+                placeholder="e.g. 10.5"
+                value={editData.unitValue}
+                onChange={(e) => setEditData({ ...editData, unitValue: e.target.value })}
+                className="h-10"
+              />
+              <p className="text-xs text-gray-400">
+                Carbon score will be recalculated automatically
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-gray-700 font-medium">
+                Description <span className="text-gray-400 font-normal">(optional)</span>
+              </Label>
+              <Input
+                placeholder="Additional context"
+                value={editData.description}
+                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                className="h-10"
+              />
+            </div>
+
+            {editError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {editError}
+              </p>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex-1"
+                onClick={() => setEditOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                disabled={editMutation.isPending}
+                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+              >
+                {editMutation.isPending ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                ) : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
