@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { Routes } from '../utils/interfaces';
 import AuthController from '../controllers/auth.controller';
 import { validateRegister, validateLogin } from '../middleware/validation.middleware';
+import { authenticateToken } from '../middleware/auth.middleware';
 
 class AuthRoutes implements Routes {
   path = '/api/auth';
@@ -16,6 +17,7 @@ class AuthRoutes implements Routes {
   private initializeRoutes() {
     this.router.post(`${this.path}/register`, validateRegister, this.authController.register);
     this.router.post(`${this.path}/login`, validateLogin, this.authController.login);
+    this.router.get(`${this.path}/me`, authenticateToken, this.authController.me);
   }
 }
 

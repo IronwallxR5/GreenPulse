@@ -9,6 +9,7 @@ import {
   ApiCallEvent,
   ImpactEvent,
 } from '../models/ImpactEvent';
+import { NotificationService } from './notifications/NotificationService';
 
 interface GetAllFilters {
   type?: ImpactType;
@@ -22,10 +23,12 @@ interface GetAllFilters {
 class ImpactService {
   private impactRepository: ImpactRepository;
   private projectRepository: ProjectRepository;
+  private notificationService: NotificationService;
 
   constructor() {
     this.impactRepository = new ImpactRepository();
     this.projectRepository = new ProjectRepository();
+    this.notificationService = NotificationService.getInstance();
   }
 
   private async verifyProjectOwnership(projectId: number, userId: number) {
@@ -40,14 +43,28 @@ class ImpactService {
   }
 
   async createImpact(data: CreateImpactDTO, projectId: number, userId: number) {
-    await this.verifyProjectOwnership(projectId, userId);
+    const project = await this.verifyProjectOwnership(projectId, userId);
     const carbonScore = this.calculateCO2(data.type, data.unitValue);
 
-    return await this.impactRepository.create({
+    const impact = await this.impactRepository.create({
       ...data,
       carbonScore,
       projectId,
     });
+
+    // ── Observer Pattern: check threshold after impact is persisted ──────────────────
+    if (project.carbonBudget != null) {
+      const summary = await this.impactRepository.getSummaryByProjectId(projectId);
+      if (summary.totalCO2 >= project.carbonBudget) {
+        await this.notificationService.notifyThresholdExceeded(
+          projectId,
+          summary.totalCO2,
+          project.carbonBudget,
+        );
+      }
+    }
+
+    return impact;
   }
 
   async getImpactById(id: number, userId: number) {

@@ -118,6 +118,52 @@ class ProjectController {
       res.status(status).json({ message });
     }
   };
+
+  setBudget = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      const budget = req.body.carbonBudget;
+      // null clears the budget; a positive number sets it
+      const parsed = budget === null ? null : parseFloat(budget);
+      if (parsed !== null && (isNaN(parsed) || parsed <= 0)) {
+        res.status(StatusCodes.BAD_REQUEST).json({ message: 'carbonBudget must be a positive number or null to clear' });
+        return;
+      }
+      const project = await this.projectService.setBudget(id, parsed, userId);
+      res.status(StatusCodes.OK).json(project);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to set budget';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  getAlerts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      const alerts = await this.projectService.getAlerts(id, userId);
+      res.status(StatusCodes.OK).json(alerts);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get alerts';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  markAlertsRead = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      await this.projectService.markAlertsRead(id, userId);
+      res.status(StatusCodes.OK).json({ message: 'All alerts marked as read' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to mark alerts';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
 }
 
 export default ProjectController;
