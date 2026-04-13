@@ -95,7 +95,7 @@ export default function ProjectView() {
     queryFn: () => projectService.getSummary(projectId),
   });
 
-  const { data: alerts = [], refetch: refetchAlerts } = useQuery({
+  const { data: alerts = [] } = useQuery({
     queryKey: ['projects', projectId, 'alerts'],
     queryFn: () => projectService.getAlerts(projectId),
   });
