@@ -6,6 +6,7 @@ import type { ReactNode } from 'react';
 import Layout from './components/layout/Layout';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
+import GoogleCallback from './pages/Auth/GoogleCallback';
 import Dashboard from './pages/Dashboard';
 import ProjectView from './pages/ProjectView';
 import Analytics from './pages/Analytics';
@@ -23,6 +24,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/auth/callback" element={<GoogleCallback />} />
         
         <Route path="/" element={<ProtectedRoute><Layout /></ProtectedRoute>}>
           <Route index element={<Navigate to="/dashboard" replace />} />
