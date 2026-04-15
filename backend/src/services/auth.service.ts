@@ -40,6 +40,10 @@ class AuthService {
       throw new Error('Invalid credentials');
     }
 
+    if (!user.password) {
+      throw new Error('This account uses Google Sign-In. Please sign in with Google.');
+    }
+
     const isPasswordValid = await this.comparePassword(data.password, user.password);
     if (!isPasswordValid) {
       throw new Error('Invalid credentials');
@@ -57,21 +61,22 @@ class AuthService {
     };
   }
 
-  private async hashPassword(password: string): Promise<string> {
-    return await bcrypt.hash(password, 10);
-  }
-
-  private async comparePassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
-    return await bcrypt.compare(plainPassword, hashedPassword);
-  }
-
-  private generateToken(userId: number): string {
+  // Public so the OAuth controller can issue JWTs for Google users
+  generateToken(userId: number): string {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
       throw new Error('JWT_SECRET is not defined');
     }
     const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
     return jwt.sign({ userId }, secret, { expiresIn: expiresIn as any });
+  }
+
+  private async hashPassword(password: string): Promise<string> {
+    return await bcrypt.hash(password, 10);
+  }
+
+  private async comparePassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
+    return await bcrypt.compare(plainPassword, hashedPassword);
   }
 }
 
