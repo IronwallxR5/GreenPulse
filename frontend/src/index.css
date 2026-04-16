@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,40 +6,35 @@
 
 @layer base {
   :root {
-    /* Warm cream surfaces */
-    --background:        38 40% 97%;   /* #fdf8f0 */
-    --foreground:        30 10% 11%;   /* #1c1a17 */
+    --background: 192 28% 97%;
+    --foreground: 194 26% 11%;
 
-    --card:              35 30% 98%;   /* near-white warm */
-    --card-foreground:   30 10% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 194 26% 11%;
 
-    --popover:           35 30% 98%;
-    --popover-foreground:30 10% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 194 26% 11%;
 
-    /* Deep forest — primary actions */
-    --primary:           145 28% 14%;  /* #172e1e */
-    --primary-foreground:38 40% 97%;
+    --primary: 188 65% 18%;
+    --primary-foreground: 192 28% 97%;
 
-    /* Warm sand — secondary */
-    --secondary:         38 26% 88%;
-    --secondary-foreground:30 10% 20%;
+    --secondary: 189 30% 91%;
+    --secondary-foreground: 194 26% 19%;
 
-    --muted:             38 22% 93%;
-    --muted-foreground:  30 10% 42%;
+    --muted: 188 18% 93%;
+    --muted-foreground: 194 14% 42%;
 
-    /* Amber gold — accent */
-    --accent:            38 55% 52%;   /* #c9963d */
-    --accent-foreground: 30 10% 11%;
+    --accent: 31 66% 50%;
+    --accent-foreground: 189 41% 10%;
 
-    --destructive:       0 72% 51%;
-    --destructive-foreground:0 0% 100%;
+    --destructive: 0 74% 52%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Warm beige border */
-    --border:            38 20% 83%;   /* #e8dcc8 */
-    --input:             38 20% 83%;
-    --ring:              145 28% 22%;
+    --border: 190 22% 84%;
+    --input: 190 22% 84%;
+    --ring: 188 58% 32%;
 
-    --radius: 0.5rem;
+    --radius: 0.85rem;
   }
 }
 
@@ -50,11 +45,124 @@
 
   body {
     @apply bg-warm-50 text-warm-950 font-sans;
+    background-image:
+      radial-gradient(circle at 14% 14%, rgba(30, 102, 114, 0.12), transparent 34%),
+      radial-gradient(circle at 86% 4%, rgba(214, 148, 62, 0.13), transparent 35%),
+      linear-gradient(180deg, #f8fbfb 0%, #f4f7f8 100%);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3 {
     @apply font-display;
+  }
+}
+
+@layer components {
+  .surface-card {
+    @apply rounded-2xl border border-warm-200 bg-white/85 backdrop-blur-sm shadow-warm-sm;
+  }
+
+  .surface-strong {
+    @apply rounded-2xl border border-forest-900/90 bg-forest-950 text-warm-50 shadow-glow-forest;
+  }
+
+  .section-heading {
+    @apply text-xs font-semibold uppercase tracking-[0.2em] text-warm-500;
+  }
+
+  .interactive-lift {
+    @apply transition-transform duration-300 hover:-translate-y-1;
+  }
+}
+
+@layer utilities {
+  .bg-grid-soft {
+    background-image:
+      linear-gradient(rgba(15, 61, 69, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(15, 61, 69, 0.08) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  .route-enter {
+    animation: route-enter 460ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  .reveal-up {
+    animation: reveal-up 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .stagger-1 {
+    animation-delay: 90ms;
+  }
+
+  .stagger-2 {
+    animation-delay: 170ms;
+  }
+
+  .stagger-3 {
+    animation-delay: 250ms;
+  }
+
+  .stagger-group > * {
+    animation: reveal-up 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .stagger-group > *:nth-child(1) {
+    animation-delay: 70ms;
+  }
+
+  .stagger-group > *:nth-child(2) {
+    animation-delay: 130ms;
+  }
+
+  .stagger-group > *:nth-child(3) {
+    animation-delay: 190ms;
+  }
+
+  .stagger-group > *:nth-child(4) {
+    animation-delay: 250ms;
+  }
+
+  .stagger-group > *:nth-child(5) {
+    animation-delay: 310ms;
+  }
+
+  .stagger-group > *:nth-child(6) {
+    animation-delay: 370ms;
+  }
+}
+
+@keyframes route-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+    filter: blur(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-enter,
+  .reveal-up,
+  .stagger-group > * {
+    animation: none !important;
   }
 }

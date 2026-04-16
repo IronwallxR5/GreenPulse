@@ -58,63 +58,74 @@ export default function Register() {
     : 'strong';
 
   return (
-    <div className="min-h-screen flex">
+    <div className="relative flex min-h-screen overflow-hidden bg-warm-50 route-enter">
+      <div className="pointer-events-none absolute inset-0 bg-grid-soft opacity-30" />
+      <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-forest-200/35 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 bottom-4 h-80 w-80 rounded-full bg-gold-200/35 blur-3xl" />
 
-      {/* ── Left panel ────────────────────────────────────────────── */}
-      <div className="hidden lg:flex lg:w-[55%] bg-forest-950 flex-col items-center justify-center p-16 relative overflow-hidden">
-
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="w-[600px] h-[600px] rounded-full border border-forest-900/70" />
-          <div className="absolute w-[420px] h-[420px] rounded-full border border-forest-900/70" />
-          <div className="absolute w-[250px] h-[250px] rounded-full border border-forest-800/50" />
-        </div>
-
-        <div className="relative z-10 text-center max-w-[360px]">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gold-500 mb-10 shadow-2xl">
-            <Leaf className="w-8 h-8 text-forest-950" />
+      <div className="relative z-10 hidden lg:flex lg:w-[55%] flex-col justify-between p-14 xl:p-16">
+        <div className="surface-strong relative flex h-full flex-col justify-between overflow-hidden p-10">
+          <div className="pointer-events-none absolute inset-0">
+            <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-forest-500/30 blur-3xl" />
+            <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-gold-300/25 blur-3xl" />
           </div>
 
-          <h1 className="font-display text-[2.6rem] leading-[1.15] font-bold text-warm-50 mb-5">
-            Start your<br />carbon journey
-          </h1>
+          <div className="relative z-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-forest-700 bg-forest-900/60 px-3 py-1.5 text-xs text-forest-200">
+              <Leaf className="h-3.5 w-3.5 text-gold-300" />
+              Climate-minded onboarding
+            </div>
+          </div>
 
-          <p className="text-forest-400 text-[15px] leading-relaxed mb-10">
-            Join teams already measuring and reducing their digital carbon footprint.
-          </p>
+          <div className="relative z-10 max-w-[460px] reveal-up">
+            <h1 className="font-display text-[2.85rem] font-bold leading-[1.08] text-warm-50">
+              Build cleaner products,
+              <br />
+              backed by real data.
+            </h1>
 
-          <div className="space-y-3 text-left">
-            {[
-              'Track compute, storage & network emissions',
-              'Set carbon budgets per project',
-              'Get actionable sustainability insights',
-              'Export PDF & CSV reports',
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3">
-                <CheckCircle className="h-4 w-4 text-gold-400 flex-shrink-0" />
-                <span className="text-forest-300 text-sm">{item}</span>
-              </div>
-            ))}
+            <p className="mb-10 mt-5 text-[15px] leading-relaxed text-forest-200">
+              Create your GreenPulse workspace and start turning invisible infrastructure emissions into visible action.
+            </p>
+
+            <div className="grid gap-3">
+              {[
+                'Track compute, storage and network emissions',
+                'Set carbon budgets at project level',
+                'Get actionable sustainability insights',
+                'Export polished PDF and CSV reports',
+              ].map((item) => (
+                <div key={item} className="flex items-center gap-3 rounded-xl border border-forest-700 bg-forest-900/50 px-3 py-2.5">
+                  <CheckCircle className="h-4 w-4 flex-shrink-0 text-gold-300" />
+                  <span className="text-sm text-forest-200">{item}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-7 rounded-2xl border border-forest-700 bg-forest-900/60 p-4 text-sm text-forest-200 animate-float">
+              Teams using GreenPulse typically surface optimization opportunities in their first week.
+            </div>
           </div>
         </div>
       </div>
 
-      {/* ── Right panel ───────────────────────────────────────────── */}
-      <div className="flex-1 bg-warm-50 flex items-center justify-center p-8 lg:p-16 overflow-y-auto">
-        <div className="w-full max-w-[400px] py-8">
+      <div className="relative z-10 flex flex-1 items-center justify-center overflow-y-auto p-6 sm:p-8 lg:p-14">
+        <div className="surface-card reveal-up stagger-1 w-full max-w-[430px] py-8">
+          <div className="px-7 sm:px-8">
 
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center gap-3 mb-10">
-            <div className="w-8 h-8 rounded-lg bg-forest-900 flex items-center justify-center">
+          <div className="mb-10 flex items-center gap-3 lg:hidden">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-forest-900">
               <Leaf className="h-4 w-4 text-gold-500" />
             </div>
             <span className="font-display text-xl font-semibold text-warm-950">GreenPulse</span>
           </div>
 
-          <h2 className="font-display text-[2rem] font-bold text-warm-950 mb-1">Create account</h2>
-          <p className="text-warm-600 text-sm mb-8">Start tracking your carbon footprint today</p>
+          <p className="section-heading">Onboarding</p>
+          <h2 className="mb-1 mt-2 font-display text-[2rem] font-bold text-warm-950">Create account</h2>
+          <p className="mb-8 text-sm text-warm-600">Start tracking your carbon footprint today</p>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 mb-5">
+            <div className="mb-5 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
               <span>{error}</span>
             </div>
@@ -123,7 +134,6 @@ export default function Register() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-              {/* Name */}
               <FormField
                 control={form.control}
                 name="name"
@@ -135,7 +145,7 @@ export default function Register() {
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-warm-500" />
                         <Input
                           placeholder="John Doe"
-                          className="pl-10 h-11 border-warm-200 bg-white focus:border-forest-800 text-warm-950"
+                          className="h-11 border-warm-200 bg-white pl-10 text-warm-950 focus-visible:ring-forest-700"
                           autoComplete="name"
                           {...field}
                         />
@@ -146,7 +156,6 @@ export default function Register() {
                 )}
               />
 
-              {/* Email */}
               <FormField
                 control={form.control}
                 name="email"
@@ -158,7 +167,7 @@ export default function Register() {
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-warm-500" />
                         <Input
                           placeholder="you@example.com"
-                          className="pl-10 h-11 border-warm-200 bg-white focus:border-forest-800"
+                          className="h-11 border-warm-200 bg-white pl-10 focus-visible:ring-forest-700"
                           autoComplete="email"
                           {...field}
                         />
@@ -169,7 +178,6 @@ export default function Register() {
                 )}
               />
 
-              {/* Password */}
               <FormField
                 control={form.control}
                 name="password"
@@ -182,7 +190,7 @@ export default function Register() {
                         <Input
                           type="password"
                           placeholder="Min. 6 characters"
-                          className="pl-10 h-11 border-warm-200 bg-white focus:border-forest-800"
+                          className="h-11 border-warm-200 bg-white pl-10 focus-visible:ring-forest-700"
                           autoComplete="new-password"
                           {...field}
                         />
@@ -207,7 +215,7 @@ export default function Register() {
 
               <Button
                 type="submit"
-                className="w-full h-11 bg-forest-900 hover:bg-forest-800 text-warm-50 font-semibold rounded-lg transition-all duration-200 shadow-sm mt-1"
+                className="mt-1 h-11 w-full rounded-lg bg-forest-900 font-semibold text-warm-50 transition-all duration-200 hover:bg-forest-800"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting ? (
@@ -218,8 +226,7 @@ export default function Register() {
               </Button>
             </form>
 
-            {/* Divider + Google */}
-            <div className="flex items-center gap-3 mt-5">
+            <div className="mt-5 flex items-center gap-3">
               <div className="flex-1 h-px bg-warm-200" />
               <span className="text-xs text-warm-500">or continue with</span>
               <div className="flex-1 h-px bg-warm-200" />
@@ -229,7 +236,7 @@ export default function Register() {
               type="button"
               id="google-signup-btn"
               onClick={() => authService.loginWithGoogle()}
-              className="w-full flex items-center justify-center gap-3 h-11 rounded-lg border border-warm-200 bg-white hover:bg-warm-100 text-warm-950 font-medium text-sm transition-all duration-200 mt-3 shadow-warm-sm"
+              className="mt-3 flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-warm-200 bg-white text-sm font-medium text-warm-950 shadow-warm-sm transition-all duration-200 hover:bg-warm-100"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -247,6 +254,7 @@ export default function Register() {
               Sign in
             </Link>
           </p>
+          </div>
         </div>
       </div>
     </div>

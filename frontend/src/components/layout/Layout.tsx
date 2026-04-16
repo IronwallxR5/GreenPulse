@@ -1,6 +1,7 @@
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Leaf, LogOut, LayoutDashboard, BarChart3 } from 'lucide-react';
+import { Leaf, LogOut, LayoutDashboard, BarChart3, Sparkles, Menu, X, UserCircle2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -11,76 +12,97 @@ export default function Layout() {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const activePage = useMemo(() => {
+    if (location.pathname.startsWith('/dashboard')) return 'Dashboard';
+    if (location.pathname.startsWith('/analytics')) return 'Analytics';
+    if (location.pathname.startsWith('/projects/')) return 'Project Details';
+    if (location.pathname.startsWith('/profile')) return 'Profile';
+    return 'GreenPulse';
+  }, [location.pathname]);
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  return (
-    <div className="flex min-h-screen">
-      {/* ── Sidebar ──────────────────────────────────────────────────── */}
-      <aside className="fixed inset-y-0 left-0 z-30 w-[220px] bg-forest-950 flex flex-col">
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
 
-        {/* Brand */}
-        <div className="px-5 py-5 border-b border-forest-900/80">
-          <Link to="/dashboard" className="flex items-center gap-3 group">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gold-500 shadow-md group-hover:bg-gold-400 transition-colors">
-              <Leaf className="h-4 w-4 text-forest-950" />
+  const isNavActive = (to: string) => location.pathname === to || location.pathname.startsWith(`${to}/`);
+
+  return (
+    <div className="relative min-h-screen overflow-x-clip">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -left-24 top-24 h-80 w-80 rounded-full bg-forest-300/20 blur-3xl animate-float" />
+        <div className="absolute -right-20 top-8 h-72 w-72 rounded-full bg-gold-300/25 blur-3xl animate-float" />
+        <div className="absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-forest-200/35 blur-3xl animate-drift" />
+      </div>
+
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] flex-col border-r border-forest-800/70 bg-forest-950/95 px-4 pb-4 pt-5 text-warm-50 backdrop-blur lg:flex">
+        <Link to="/dashboard" className="group rounded-2xl border border-forest-800/90 bg-forest-900/85 p-4 transition-colors hover:border-forest-700">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/95 shadow-lg transition-transform group-hover:scale-[1.03]">
+              <Leaf className="h-5 w-5 text-forest-950" />
             </div>
-            <span className="font-display text-[17px] font-semibold text-warm-50 tracking-tight">
-              GreenPulse
-            </span>
-          </Link>
+            <div>
+              <p className="font-display text-xl font-semibold leading-tight tracking-tight">GreenPulse</p>
+              <p className="text-xs text-forest-300">Eco Impact Control Room</p>
+            </div>
+          </div>
+        </Link>
+
+        <div className="mt-5 rounded-2xl border border-forest-800/80 bg-forest-900/50 p-3">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-forest-400">Realtime</p>
+          <div className="mt-2 flex items-center gap-2 text-sm font-medium text-forest-100">
+            <Sparkles className="h-4 w-4 text-gold-400 animate-pulseSoft" />
+            Carbon analytics online
+          </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 px-3 py-5 space-y-0.5">
+        <nav className="mt-6 flex-1 space-y-1.5">
           {navItems.map(({ to, icon: Icon, label }) => {
-            const active = location.pathname === to;
+            const active = isNavActive(to);
             return (
               <Link
                 key={to}
                 to={to}
-                className={`group flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
+                className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
                   active
-                    ? 'bg-forest-900 text-warm-50 border-l-[3px] border-gold-500 pl-[9px]'
-                    : 'text-forest-400 hover:bg-forest-900/50 hover:text-forest-200 border-l-[3px] border-transparent'
+                    ? 'bg-forest-700/70 text-warm-50 shadow-glow-forest'
+                    : 'text-forest-300 hover:bg-forest-800/70 hover:text-warm-50'
                 }`}
               >
-                <Icon
-                  className={`h-4 w-4 flex-shrink-0 transition-colors ${
-                    active ? 'text-gold-400' : 'text-forest-500 group-hover:text-forest-300'
-                  }`}
-                />
+                <Icon className={`h-4 w-4 transition-colors ${active ? 'text-gold-300' : 'text-forest-400 group-hover:text-gold-300'}`} />
                 {label}
               </Link>
             );
           })}
         </nav>
 
-        {/* User section */}
-        <div className="p-3 border-t border-forest-900/80 space-y-1">
+        <div className="space-y-2 border-t border-forest-800/80 pt-4">
           <Link
             to="/profile"
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-150 group ${
-              location.pathname === '/profile'
-                ? 'bg-forest-900 border-l-[3px] border-gold-500 pl-[9px]'
-                : 'hover:bg-forest-900/50 border-l-[3px] border-transparent'
+            className={`flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all duration-200 ${
+              isNavActive('/profile')
+                ? 'bg-forest-700/70 text-warm-50 shadow-glow-forest'
+                : 'text-forest-200 hover:bg-forest-800/70'
             }`}
           >
-            <div className="w-7 h-7 rounded-full bg-gold-500 flex items-center justify-center flex-shrink-0 text-xs font-bold text-forest-950 shadow">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gold-500 text-xs font-bold text-forest-950">
               {user?.name?.[0]?.toUpperCase() ?? '?'}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-forest-200 truncate">{user?.name}</p>
-              <p className="text-[11px] text-forest-500">Profile</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium">{user?.name}</p>
+              <p className="text-xs text-forest-400">Profile & account</p>
             </div>
           </Link>
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-forest-500 hover:bg-red-950/40 hover:text-red-400 transition-all duration-150 border-l-[3px] border-transparent"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-forest-300 transition-colors hover:bg-red-900/40 hover:text-red-300"
           >
             <LogOut className="h-4 w-4" />
             Sign out
@@ -88,10 +110,95 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* ── Main content ─────────────────────────────────────────────── */}
-      <div className="pl-[220px] flex-1 min-h-screen bg-warm-50">
-        <main className="max-w-[1200px] mx-auto px-8 py-8">
-          <Outlet />
+      <header className="sticky top-0 z-30 border-b border-warm-200/80 bg-white/90 px-4 py-3 backdrop-blur lg:hidden">
+        <div className="mx-auto flex max-w-[1200px] items-center justify-between">
+          <button
+            onClick={() => setMobileOpen((v) => !v)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-warm-200 bg-white text-warm-700 shadow-warm-sm"
+            aria-label="Toggle navigation"
+          >
+            {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+          </button>
+
+          <Link to="/dashboard" className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-forest-900">
+              <Leaf className="h-4 w-4 text-gold-400" />
+            </div>
+            <span className="font-display text-lg font-semibold text-warm-950">GreenPulse</span>
+          </Link>
+
+          <Link
+            to="/profile"
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-warm-200 bg-white text-warm-700 shadow-warm-sm"
+            aria-label="Open profile"
+          >
+            <UserCircle2 className="h-5 w-5" />
+          </Link>
+        </div>
+
+        {mobileOpen && (
+          <div className="mx-auto mt-3 max-w-[1200px] rounded-2xl border border-warm-200 bg-white p-2 shadow-warm-md">
+            <nav className="space-y-1">
+              {navItems.map(({ to, icon: Icon, label }) => {
+                const active = isNavActive(to);
+                return (
+                  <Link
+                    key={to}
+                    to={to}
+                    onClick={() => setMobileOpen(false)}
+                    className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium ${
+                      active
+                        ? 'bg-forest-100 text-forest-800'
+                        : 'text-warm-700 hover:bg-warm-100'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {label}
+                  </Link>
+                );
+              })}
+              <Link
+                to="/profile"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium ${
+                  isNavActive('/profile')
+                    ? 'bg-forest-100 text-forest-800'
+                    : 'text-warm-700 hover:bg-warm-100'
+                }`}
+              >
+                <UserCircle2 className="h-4 w-4" />
+                Profile
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </button>
+            </nav>
+          </div>
+        )}
+      </header>
+
+      <div className="relative lg:pl-[280px]">
+        <div className="hidden border-b border-warm-200/80 bg-white/70 backdrop-blur lg:block">
+          <div className="mx-auto flex max-w-[1300px] items-center justify-between px-8 py-5">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warm-500">Workspace</p>
+              <h1 className="mt-1 font-display text-2xl font-semibold text-warm-950">{activePage}</h1>
+            </div>
+            <div className="flex items-center gap-2 rounded-full border border-warm-200 bg-white px-3 py-1.5 text-xs text-warm-700 shadow-warm-sm">
+              <span className="h-2 w-2 rounded-full bg-forest-500 animate-pulseSoft" />
+              Live ingestion active
+            </div>
+          </div>
+        </div>
+
+        <main className="mx-auto max-w-[1300px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <div key={location.pathname} className="route-enter">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
