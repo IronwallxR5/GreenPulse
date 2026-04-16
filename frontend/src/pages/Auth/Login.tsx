@@ -17,8 +17,6 @@ import {
 } from '../../components/ui/form';
 import { Leaf, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
 
-
-// Schema matches backend validateLogin: email + password (min 1)
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(1, { message: 'Password is required' }),
@@ -52,45 +50,82 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 rounded-full bg-green-100 opacity-60 blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 rounded-full bg-emerald-100 opacity-60 blur-3xl" />
-      </div>
+    <div className="min-h-screen flex">
 
-      <div className="relative w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-green-600 shadow-lg mb-4">
-            <Leaf className="w-8 h-8 text-white" />
-          </div>
-          <h1 className="text-3xl font-bold text-gray-900">GreenPulse</h1>
-          <p className="text-gray-500 mt-1 text-sm">Carbon footprint tracking platform</p>
+      {/* ── Left panel (desktop only) ──────────────────────────────── */}
+      <div className="hidden lg:flex lg:w-[55%] bg-forest-950 flex-col items-center justify-center p-16 relative overflow-hidden">
+
+        {/* Ambient concentric rings */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-[600px] h-[600px] rounded-full border border-forest-900/70" />
+          <div className="absolute w-[420px] h-[420px] rounded-full border border-forest-900/70" />
+          <div className="absolute w-[250px] h-[250px] rounded-full border border-forest-800/50" />
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
-          <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900">Welcome back</h2>
-            <p className="text-gray-500 text-sm mt-1">Sign in to your account to continue</p>
+        <div className="relative z-10 text-center max-w-[360px]">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gold-500 mb-10 shadow-2xl">
+            <Leaf className="w-8 h-8 text-forest-950" />
           </div>
 
+          <h1 className="font-display text-[2.6rem] leading-[1.15] font-bold text-warm-50 mb-5">
+            Measure what<br />matters most
+          </h1>
+
+          <p className="text-forest-400 text-[15px] leading-relaxed">
+            Track carbon across compute, storage, and network infrastructure — all in one place.
+          </p>
+
+          <div className="mt-12 pt-8 border-t border-forest-900 flex items-center justify-center gap-14">
+            {[
+              { num: '100+', desc: 'Projects tracked' },
+              { num: '1.2t', desc: 'CO₂e measured' },
+            ].map(({ num, desc }) => (
+              <div key={desc} className="text-center">
+                <p className="text-gold-400 text-2xl font-bold font-display">{num}</p>
+                <p className="text-forest-500 text-xs mt-1">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Right panel (form) ─────────────────────────────────────── */}
+      <div className="flex-1 bg-warm-50 flex items-center justify-center p-8 lg:p-16">
+        <div className="w-full max-w-[400px]">
+
+          {/* Mobile logo */}
+          <div className="lg:hidden flex items-center gap-3 mb-10">
+            <div className="w-8 h-8 rounded-lg bg-forest-900 flex items-center justify-center">
+              <Leaf className="h-4 w-4 text-gold-500" />
+            </div>
+            <span className="font-display text-xl font-semibold text-warm-950">GreenPulse</span>
+          </div>
+
+          <h2 className="font-display text-[2rem] font-bold text-warm-950 mb-1">Welcome back</h2>
+          <p className="text-warm-600 text-sm mb-8">Sign in to continue tracking your carbon footprint</p>
+
+          {error && (
+            <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 mb-5">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-              {/* Email */}
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
               <FormField
                 control={form.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700 font-medium">Email address</FormLabel>
+                    <FormLabel className="text-warm-800 font-medium text-sm">Email address</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-warm-500" />
                         <Input
                           placeholder="you@example.com"
-                          className="pl-10 h-11 border-gray-200 focus:border-green-500 focus:ring-green-500"
+                          className="pl-10 h-11 border-warm-200 bg-white focus:border-forest-800 text-warm-950"
                           autoComplete="email"
                           {...field}
                         />
@@ -101,20 +136,19 @@ export default function Login() {
                 )}
               />
 
-              {/* Password */}
               <FormField
                 control={form.control}
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-gray-700 font-medium">Password</FormLabel>
+                    <FormLabel className="text-warm-800 font-medium text-sm">Password</FormLabel>
                     <FormControl>
                       <div className="relative">
-                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-warm-500" />
                         <Input
                           type="password"
                           placeholder="••••••••"
-                          className="pl-10 h-11 border-gray-200 focus:border-green-500 focus:ring-green-500"
+                          className="pl-10 h-11 border-warm-200 bg-white focus:border-forest-800"
                           autoComplete="current-password"
                           {...field}
                         />
@@ -125,25 +159,13 @@ export default function Login() {
                 )}
               />
 
-              {/* API Error */}
-              {error && (
-                <div className="flex items-center gap-2 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {/* Submit */}
               <Button
                 type="submit"
-                className="w-full h-11 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-sm hover:shadow-md"
+                className="w-full h-11 bg-forest-900 hover:bg-forest-800 text-warm-50 font-semibold rounded-lg transition-all duration-200 shadow-sm mt-1"
                 disabled={form.formState.isSubmitting}
               >
                 {form.formState.isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Signing in...</>
                 ) : (
                   'Sign in'
                 )}
@@ -152,17 +174,17 @@ export default function Login() {
 
             {/* Divider */}
             <div className="flex items-center gap-3 mt-5">
-              <div className="flex-1 h-px bg-gray-200" />
-              <span className="text-xs text-gray-400 font-medium">or continue with</span>
-              <div className="flex-1 h-px bg-gray-200" />
+              <div className="flex-1 h-px bg-warm-200" />
+              <span className="text-xs text-warm-500">or continue with</span>
+              <div className="flex-1 h-px bg-warm-200" />
             </div>
 
-            {/* Google Sign-In */}
+            {/* Google */}
             <button
               type="button"
               id="google-signin-btn"
               onClick={() => authService.loginWithGoogle()}
-              className="w-full flex items-center justify-center gap-3 h-11 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium text-sm transition-all duration-200 shadow-sm hover:shadow mt-3"
+              className="w-full flex items-center justify-center gap-3 h-11 rounded-lg border border-warm-200 bg-white hover:bg-warm-100 text-warm-950 font-medium text-sm transition-all duration-200 mt-3 shadow-warm-sm"
             >
               <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -174,24 +196,17 @@ export default function Login() {
             </button>
           </Form>
 
-          {/* Divider */}
-          <div className="mt-6 pt-6 border-t border-gray-100 text-center">
-            <p className="text-sm text-gray-500">
-              Don't have an account?{' '}
-              <Link
-                to="/register"
-                className="font-semibold text-green-600 hover:text-green-700 hover:underline transition-colors"
-              >
-                Create one free
-              </Link>
-            </p>
-          </div>
-        </div>
+          <p className="mt-8 text-center text-sm text-warm-600">
+            Don't have an account?{' '}
+            <Link to="/register" className="font-semibold text-forest-900 hover:text-forest-700 transition-colors">
+              Create one free
+            </Link>
+          </p>
 
-        {/* Footer note */}
-        <p className="text-center text-xs text-gray-400 mt-6">
-          By signing in, you agree to track your carbon impact responsibly 🌱
-        </p>
+          <p className="mt-5 text-center text-xs text-warm-400">
+            By signing in, you agree to track your carbon impact responsibly 🌱
+          </p>
+        </div>
       </div>
     </div>
   );

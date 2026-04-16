@@ -22,79 +22,86 @@ export default function Profile() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        <Loader2 className="h-7 w-7 animate-spin text-forest-600" />
       </div>
     );
   }
 
   const memberSince = profile?.createdAt
-    ? new Date(profile.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
+    ? new Date(profile.createdAt).toLocaleDateString('en-IN', {
+        year: 'numeric', month: 'long', day: 'numeric',
+      })
     : '—';
+
+  const initials = profile?.name
+    ? profile.name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+    : '?';
 
   return (
     <div className="max-w-xl mx-auto space-y-6">
+
       {/* Page header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-        <p className="text-gray-500 text-sm mt-1">Manage your account information</p>
+        <h1 className="font-display text-2xl font-bold text-warm-950">My Profile</h1>
+        <p className="text-warm-600 text-sm mt-1">Manage your account information</p>
       </div>
 
-      {/* Avatar + name card */}
-      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8 flex flex-col items-center text-center">
-        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center mb-4 shadow-md">
-          <span className="text-3xl font-bold text-white">
-            {profile?.name?.[0]?.toUpperCase() ?? '?'}
-          </span>
+      {/* Avatar card */}
+      <div className="bg-forest-950 rounded-2xl p-8 flex flex-col items-center text-center shadow-warm-md">
+        <div className="w-20 h-20 rounded-full bg-gold-500 flex items-center justify-center mb-4 shadow-lg">
+          <span className="text-2xl font-bold text-forest-950 font-display">{initials}</span>
         </div>
-        <h2 className="text-xl font-bold text-gray-900">{profile?.name ?? '—'}</h2>
-        <p className="text-gray-500 text-sm mt-1">{profile?.email ?? '—'}</p>
-        <div className="mt-3 px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-semibold flex items-center gap-1">
+        <h2 className="font-display text-xl font-bold text-warm-50">{profile?.name ?? '—'}</h2>
+        <p className="text-forest-400 text-sm mt-1">{profile?.email ?? '—'}</p>
+        <div className="mt-4 px-3 py-1.5 rounded-full bg-forest-900 text-gold-400 text-xs font-semibold flex items-center gap-1.5 border border-forest-800">
           <ShieldCheck className="h-3.5 w-3.5" />
           Verified Account
         </div>
       </div>
 
       {/* Info rows */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden divide-y divide-gray-100">
-        <div className="flex items-center gap-3 px-5 py-4">
-          <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-            <User className="h-4 w-4 text-blue-600" />
+      <div className="bg-white rounded-xl border border-warm-200 shadow-warm-sm overflow-hidden divide-y divide-warm-100">
+        <div className="flex items-center gap-4 px-5 py-4">
+          <div className="w-9 h-9 rounded-lg bg-forest-50 border border-warm-200 flex items-center justify-center flex-shrink-0">
+            <User className="h-4 w-4 text-forest-700" />
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Full Name</p>
-            <p className="text-sm font-semibold text-gray-900 mt-0.5">{profile?.name ?? '—'}</p>
+            <p className="text-xs font-medium text-warm-500 uppercase tracking-wide">Full Name</p>
+            <p className="text-sm font-semibold text-warm-950 mt-0.5">{profile?.name ?? '—'}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-5 py-4">
-          <div className="w-9 h-9 rounded-lg bg-purple-50 flex items-center justify-center flex-shrink-0">
-            <Mail className="h-4 w-4 text-purple-600" />
+        <div className="flex items-center gap-4 px-5 py-4">
+          <div className="w-9 h-9 rounded-lg bg-gold-50 border border-warm-200 flex items-center justify-center flex-shrink-0">
+            <Mail className="h-4 w-4 text-gold-600" />
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Email Address</p>
-            <p className="text-sm font-semibold text-gray-900 mt-0.5">{profile?.email ?? '—'}</p>
+            <p className="text-xs font-medium text-warm-500 uppercase tracking-wide">Email Address</p>
+            <p className="text-sm font-semibold text-warm-950 mt-0.5">{profile?.email ?? '—'}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 px-5 py-4">
-          <div className="w-9 h-9 rounded-lg bg-green-50 flex items-center justify-center flex-shrink-0">
-            <Calendar className="h-4 w-4 text-green-600" />
+        <div className="flex items-center gap-4 px-5 py-4">
+          <div className="w-9 h-9 rounded-lg bg-warm-100 border border-warm-200 flex items-center justify-center flex-shrink-0">
+            <Calendar className="h-4 w-4 text-warm-700" />
           </div>
           <div>
-            <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Member Since</p>
-            <p className="text-sm font-semibold text-gray-900 mt-0.5">{memberSince}</p>
+            <p className="text-xs font-medium text-warm-500 uppercase tracking-wide">Member Since</p>
+            <p className="text-sm font-semibold text-warm-950 mt-0.5">{memberSince}</p>
           </div>
         </div>
       </div>
 
       {/* Danger zone */}
-      <div className="bg-white rounded-xl border border-red-100 shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-1">Session</h3>
-        <p className="text-xs text-gray-400 mb-4">Signing out will clear your local session. You'll need to log in again to access your projects.</p>
+      <div className="bg-white rounded-xl border border-warm-200 shadow-warm-sm p-5">
+        <h3 className="text-sm font-semibold text-warm-800 mb-1">Session</h3>
+        <p className="text-xs text-warm-500 mb-4">
+          Signing out will clear your local session. You'll need to log in again to access your projects.
+        </p>
         <Button
           onClick={handleLogout}
           variant="outline"
-          className="gap-2 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+          className="gap-2 text-red-600 border-warm-200 hover:bg-red-50 hover:border-red-200"
         >
           <LogOut className="h-4 w-4" />
           Sign Out

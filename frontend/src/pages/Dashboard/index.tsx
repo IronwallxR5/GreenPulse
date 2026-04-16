@@ -20,9 +20,9 @@ export default function Dashboard() {
   const [description, setDescription] = useState('');
 
   // ── Edit project state ───────────────────────────────────────────────────
-  const [editOpen, setEditOpen]             = useState(false);
-  const [editTarget, setEditTarget]         = useState<Project | null>(null);
-  const [editName, setEditName]             = useState('');
+  const [editOpen, setEditOpen]               = useState(false);
+  const [editTarget, setEditTarget]           = useState<Project | null>(null);
+  const [editName, setEditName]               = useState('');
   const [editDescription, setEditDescription] = useState('');
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
@@ -81,36 +81,37 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Page header */}
+
+      {/* ── Page header ─────────────────────────────────────────────── */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {user?.name?.split(' ')[0]} 👋
+          <h1 className="font-display text-2xl font-bold text-warm-950">
+            Welcome back, {user?.name?.split(' ')[0]}
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <p className="text-warm-600 mt-1 text-sm">
             Manage your projects and track carbon emissions
           </p>
         </div>
 
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700 text-white shadow-sm gap-2">
+            <Button className="bg-forest-900 hover:bg-forest-800 text-warm-50 shadow-warm-sm gap-2">
               <Plus className="h-4 w-4" />
               New Project
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md bg-warm-50 border-warm-200">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-md bg-green-100 flex items-center justify-center">
-                  <Leaf className="h-4 w-4 text-green-600" />
+              <DialogTitle className="flex items-center gap-2 font-display text-warm-950">
+                <div className="w-7 h-7 rounded-md bg-gold-100 flex items-center justify-center">
+                  <Leaf className="h-4 w-4 text-gold-600" />
                 </div>
                 Create New Project
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreate} className="space-y-4 pt-2">
               <div className="space-y-1.5">
-                <Label htmlFor="proj-name" className="text-gray-700 font-medium">
+                <Label htmlFor="proj-name" className="text-warm-800 font-medium">
                   Project Name <span className="text-red-500">*</span>
                 </Label>
                 <Input
@@ -118,26 +119,26 @@ export default function Dashboard() {
                   placeholder="e.g. Cloud API v2"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="h-10"
+                  className="h-10 border-warm-200 bg-white focus:border-forest-800"
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="proj-desc" className="text-gray-700 font-medium">
-                  Description <span className="text-gray-400 font-normal">(optional)</span>
+                <Label htmlFor="proj-desc" className="text-warm-800 font-medium">
+                  Description <span className="text-warm-500 font-normal">(optional)</span>
                 </Label>
                 <Input
                   id="proj-desc"
                   placeholder="Brief description of the project"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="h-10"
+                  className="h-10 border-warm-200 bg-white focus:border-forest-800"
                 />
               </div>
               <Button
                 type="submit"
                 disabled={createMutation.isPending || !name.trim()}
-                className="w-full bg-green-600 hover:bg-green-700 text-white"
+                className="w-full bg-forest-900 hover:bg-forest-800 text-warm-50"
               >
                 {createMutation.isPending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</>
@@ -150,46 +151,46 @@ export default function Dashboard() {
         </Dialog>
       </div>
 
-      {/* Stats bar */}
+      {/* ── Stats bar ───────────────────────────────────────────────── */}
       {projects.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Projects</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">{projects.length}</p>
+          <div className="bg-white rounded-xl border border-warm-200 p-5 shadow-warm-sm">
+            <p className="text-xs text-warm-500 font-medium uppercase tracking-wide">Total Projects</p>
+            <p className="text-3xl font-display font-bold text-warm-950 mt-2">{projects.length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Events</p>
-            <p className="text-3xl font-bold text-gray-900 mt-1">
+          <div className="bg-white rounded-xl border border-warm-200 p-5 shadow-warm-sm">
+            <p className="text-xs text-warm-500 font-medium uppercase tracking-wide">Total Events</p>
+            <p className="text-3xl font-display font-bold text-warm-950 mt-2">
               {projects.reduce((sum, p) => sum + (p._count?.impactLogs || 0), 0)}
             </p>
           </div>
-          <div className="hidden sm:block bg-green-50 rounded-xl border border-green-100 p-4 shadow-sm">
-            <p className="text-xs text-green-700 font-medium uppercase tracking-wide">Status</p>
-            <p className="text-sm font-semibold text-green-700 mt-1">Tracking Active 🌱</p>
+          <div className="hidden sm:block bg-forest-950 rounded-xl p-5 shadow-warm-sm">
+            <p className="text-xs text-forest-400 font-medium uppercase tracking-wide">Status</p>
+            <p className="text-sm font-semibold text-gold-400 mt-2 font-display">Tracking Active 🌱</p>
           </div>
         </div>
       )}
 
-      {/* Loading state */}
+      {/* ── Loading ─────────────────────────────────────────────────── */}
       {isLoading && (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-7 w-7 animate-spin text-forest-600" />
         </div>
       )}
 
-      {/* Empty state */}
+      {/* ── Empty state ─────────────────────────────────────────────── */}
       {!isLoading && projects.length === 0 && (
-        <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-16 text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-green-50 mb-4">
-            <FolderOpen className="h-8 w-8 text-green-500" />
+        <div className="bg-white rounded-2xl border border-dashed border-warm-300 p-16 text-center shadow-warm-sm">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-forest-950/5 mb-4">
+            <FolderOpen className="h-8 w-8 text-forest-600" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No projects yet</h3>
-          <p className="text-gray-500 text-sm mb-6 max-w-sm mx-auto">
+          <h3 className="font-display text-lg font-semibold text-warm-950 mb-2">No projects yet</h3>
+          <p className="text-warm-600 text-sm mb-6 max-w-sm mx-auto">
             Create your first project to start tracking carbon emissions across your infrastructure.
           </p>
           <Button
             onClick={() => setOpen(true)}
-            className="bg-green-600 hover:bg-green-700 text-white gap-2"
+            className="bg-forest-900 hover:bg-forest-800 text-warm-50 gap-2"
           >
             <Plus className="h-4 w-4" />
             Create your first project
@@ -197,39 +198,40 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Projects grid */}
+      {/* ── Projects grid ───────────────────────────────────────────── */}
       {!isLoading && projects.length > 0 && (
         <div>
-          <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+          <h2 className="text-xs font-semibold text-warm-500 uppercase tracking-wider mb-4">
             Your Projects ({projects.length})
           </h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {projects.map((project: Project) => (
               <div
                 key={project.id}
-                className="group bg-white rounded-xl border border-gray-200 hover:border-green-300 hover:shadow-md transition-all duration-200 overflow-hidden"
+                className="group bg-white rounded-xl border border-warm-200 hover:border-forest-300 hover:shadow-warm-md transition-all duration-200 overflow-hidden"
               >
-                {/* Card top accent */}
-                <div className="h-1 bg-gradient-to-r from-green-400 to-emerald-500" />
+                {/* Warm gold top accent */}
+                <div className="h-[3px] bg-gradient-to-r from-gold-500 to-gold-300" />
 
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-2 mb-3">
                     <div className="flex-1 min-w-0">
                       <Link
                         to={`/projects/${project.id}`}
-                        className="font-semibold text-gray-900 hover:text-green-700 transition-colors line-clamp-1 block"
+                        className="font-semibold text-warm-950 hover:text-forest-800 transition-colors line-clamp-1 block"
                       >
                         {project.name}
                       </Link>
-                      <p className="text-sm text-gray-500 mt-0.5 line-clamp-2">
+                      <p className="text-sm text-warm-600 mt-0.5 line-clamp-2">
                         {project.description || 'No description provided.'}
                       </p>
                     </div>
+
                     {/* Action buttons — visible on hover */}
                     <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 flex-shrink-0">
                       <button
                         onClick={() => openEditDialog(project)}
-                        className="p-1.5 rounded-lg hover:bg-blue-50 text-gray-400 hover:text-blue-500"
+                        className="p-1.5 rounded-lg hover:bg-warm-100 text-warm-400 hover:text-forest-700"
                         title="Edit project"
                       >
                         <Pencil className="h-4 w-4" />
@@ -237,7 +239,7 @@ export default function Dashboard() {
                       <button
                         onClick={() => deleteMutation.mutate(project.id)}
                         disabled={deleteMutation.isPending}
-                        className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500"
+                        className="p-1.5 rounded-lg hover:bg-red-50 text-warm-400 hover:text-red-500"
                         title="Delete project"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -245,14 +247,14 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                      <div className="w-2 h-2 rounded-full bg-green-400" />
+                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-warm-100">
+                    <div className="flex items-center gap-1.5 text-xs text-warm-500">
+                      <div className="w-2 h-2 rounded-full bg-forest-400" />
                       <span>{project._count?.impactLogs || 0} impact events</span>
                     </div>
                     <Link
                       to={`/projects/${project.id}`}
-                      className="flex items-center gap-1 text-xs font-medium text-green-600 hover:text-green-700"
+                      className="flex items-center gap-1 text-xs font-medium text-forest-700 hover:text-forest-900 transition-colors"
                     >
                       View details
                       <ArrowRight className="h-3 w-3" />
@@ -265,46 +267,46 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* ── Edit Project Dialog ──────────────────────────────────────────────── */}
+      {/* ── Edit Project Dialog ─────────────────────────────────────── */}
       <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) setEditTarget(null); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-warm-50 border-warm-200">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-md bg-blue-100 flex items-center justify-center">
-                <Pencil className="h-4 w-4 text-blue-600" />
+            <DialogTitle className="flex items-center gap-2 font-display text-warm-950">
+              <div className="w-7 h-7 rounded-md bg-warm-100 flex items-center justify-center">
+                <Pencil className="h-4 w-4 text-warm-700" />
               </div>
               Edit Project
             </DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label className="text-gray-700 font-medium">
+              <Label className="text-warm-800 font-medium">
                 Project Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 placeholder="e.g. Cloud API v2"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="h-10"
+                className="h-10 border-warm-200 bg-white"
                 required
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-gray-700 font-medium">
-                Description <span className="text-gray-400 font-normal">(optional)</span>
+              <Label className="text-warm-800 font-medium">
+                Description <span className="text-warm-500 font-normal">(optional)</span>
               </Label>
               <Input
                 placeholder="Brief description of the project"
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
-                className="h-10"
+                className="h-10 border-warm-200 bg-white"
               />
             </div>
             <div className="flex gap-2">
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className="flex-1 border-warm-200 text-warm-700"
                 onClick={() => setEditOpen(false)}
               >
                 Cancel
@@ -312,7 +314,7 @@ export default function Dashboard() {
               <Button
                 type="submit"
                 disabled={editMutation.isPending || !editName.trim()}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1 bg-forest-900 hover:bg-forest-800 text-warm-50"
               >
                 {editMutation.isPending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving...</>

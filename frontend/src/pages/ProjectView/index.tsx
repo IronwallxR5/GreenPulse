@@ -253,7 +253,7 @@ export default function ProjectView() {
   if (projectLoading) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-8 w-8 animate-spin text-green-600" />
+        <Loader2 className="h-7 w-7 animate-spin text-forest-600" />
       </div>
     );
   }
@@ -261,8 +261,8 @@ export default function ProjectView() {
   if (!project) {
     return (
       <div className="text-center py-24">
-        <p className="text-gray-500">Project not found.</p>
-        <Button onClick={() => navigate('/dashboard')} className="mt-4">Back to Dashboard</Button>
+        <p className="text-warm-600">Project not found.</p>
+        <Button onClick={() => navigate('/dashboard')} className="mt-4 bg-forest-900 hover:bg-forest-800 text-warm-50">Back to Dashboard</Button>
       </div>
     );
   }
@@ -275,14 +275,14 @@ export default function ProjectView() {
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center justify-center w-9 h-9 rounded-lg border border-gray-200 bg-white hover:bg-gray-50 text-gray-600 transition-colors shadow-sm"
+            className="flex items-center justify-center w-9 h-9 rounded-lg border border-warm-200 bg-white hover:bg-warm-100 text-warm-700 transition-colors shadow-warm-sm"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
+            <h1 className="font-display text-2xl font-bold text-warm-950">{project.name}</h1>
             {project.description && (
-              <p className="text-gray-500 text-sm mt-0.5">{project.description}</p>
+              <p className="text-warm-600 text-sm mt-0.5">{project.description}</p>
             )}
           </div>
         </div>
@@ -290,7 +290,7 @@ export default function ProjectView() {
         <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
-            className="gap-2 text-gray-700 font-medium bg-white hover:bg-gray-50 border-gray-200"
+            className="gap-2 text-warm-700 font-medium bg-white hover:bg-warm-100 border-warm-200"
             onClick={() => downloadMutation.mutate('pdf')}
             disabled={downloadMutation.isPending}
           >
@@ -303,14 +303,14 @@ export default function ProjectView() {
           </Button>
           <Button 
             variant="outline" 
-            className="gap-2 text-gray-700 font-medium bg-white hover:bg-gray-50 border-gray-200"
+            className="gap-2 text-warm-700 font-medium bg-white hover:bg-warm-100 border-warm-200"
             onClick={() => downloadMutation.mutate('csv')}
             disabled={downloadMutation.isPending}
           >
             {downloadMutation.isPending && downloadMutation.variables === 'csv' ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <FileSpreadsheet className="h-4 w-4 text-green-600" />
+              <FileSpreadsheet className="h-4 w-4 text-forest-600" />
             )}
             CSV Report
           </Button>
@@ -319,52 +319,52 @@ export default function ProjectView() {
 
       {/* ── Summary Stats ──────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        <div className="bg-forest-950 rounded-xl p-5 shadow-warm-md">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
-              <TrendingUp className="h-4 w-4 text-green-600" />
+            <div className="w-8 h-8 rounded-lg bg-forest-900 flex items-center justify-center">
+              <TrendingUp className="h-4 w-4 text-gold-400" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Total Carbon</span>
+            <span className="text-sm font-medium text-forest-400">Total Carbon</span>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{summary?.totalCO2.toFixed(3) ?? '—'}</p>
-          <p className="text-xs text-gray-400 mt-1">kg CO₂e</p>
+          <p className="text-3xl font-display font-bold text-warm-50">{summary?.totalCO2.toFixed(3) ?? '—'}</p>
+          <p className="text-xs text-forest-500 mt-1">kg CO₂e</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        <div className="bg-white rounded-xl border border-warm-200 p-5 shadow-warm-sm">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
-              <Activity className="h-4 w-4 text-blue-600" />
+            <div className="w-8 h-8 rounded-lg bg-gold-50 flex items-center justify-center">
+              <Activity className="h-4 w-4 text-gold-600" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Total Events</span>
+            <span className="text-sm font-medium text-warm-600">Total Events</span>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{summary?.totalLogs ?? 0}</p>
-          <p className="text-xs text-gray-400 mt-1">impact logs recorded</p>
+          <p className="text-3xl font-display font-bold text-warm-950">{summary?.totalLogs ?? 0}</p>
+          <p className="text-xs text-warm-500 mt-1">impact logs recorded</p>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+        <div className="bg-white rounded-xl border border-warm-200 p-5 shadow-warm-sm">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-orange-600" />
+            <div className="w-8 h-8 rounded-lg bg-warm-100 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-warm-700" />
             </div>
-            <span className="text-sm font-medium text-gray-500">Top Emitter</span>
+            <span className="text-sm font-medium text-warm-600">Top Emitter</span>
           </div>
           {summary?.byType && summary.byType.length > 0 ? (
             <>
-              <p className="text-xl font-bold text-gray-900">
+              <p className="text-xl font-display font-bold text-warm-950">
                 {summary.byType.reduce((a, b) => (a.totalCO2 > b.totalCO2 ? a : b)).type}
               </p>
-              <p className="text-xs text-gray-400 mt-1">highest emission source</p>
+              <p className="text-xs text-warm-500 mt-1">highest emission source</p>
             </>
           ) : (
-            <p className="text-sm text-gray-400 mt-2">No data yet</p>
+            <p className="text-sm text-warm-500 mt-2">No data yet</p>
           )}
         </div>
       </div>
 
       {/* Breakdown by type */}
       {summary?.byType && summary.byType.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Emissions by Type</h3>
+        <div className="bg-white rounded-xl border border-warm-200 p-5 shadow-warm-sm">
+          <h3 className="font-display text-sm font-semibold text-warm-800 mb-4">Emissions by Type</h3>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {summary.byType.map((b) => {
               const cfg = TYPE_CONFIG[b.type as ImpactType] ?? { icon: null, color: 'text-gray-700', bg: 'bg-gray-50' };
@@ -384,15 +384,15 @@ export default function ProjectView() {
       )}
 
       {/* ── Carbon Budget Panel ──────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+      <div className="bg-white rounded-xl border border-warm-200 shadow-warm-sm p-5">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
-              <ShieldAlert className="h-4 w-4 text-amber-600" />
+            <div className="w-8 h-8 rounded-lg bg-gold-50 flex items-center justify-center">
+              <ShieldAlert className="h-4 w-4 text-gold-600" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-gray-700">Carbon Budget</h3>
-              <p className="text-xs text-gray-400">
+              <h3 className="font-display text-sm font-semibold text-warm-800">Carbon Budget</h3>
+              <p className="text-xs text-warm-500">
                 {project?.carbonBudget != null
                   ? `Current limit: ${project.carbonBudget.toFixed(2)} kg CO₂e`
                   : 'No budget set — an alert fires when total CO₂ exceeds this threshold'}
@@ -418,7 +418,7 @@ export default function ProjectView() {
             placeholder="Enter CO₂ threshold in kg (e.g. 100)"
             value={budgetInput}
             onChange={(e) => setBudgetInput(e.target.value)}
-            className="h-9 text-sm flex-1"
+            className="h-9 text-sm flex-1 border-warm-200"
           />
           <Button
             onClick={() => {
@@ -426,7 +426,7 @@ export default function ProjectView() {
               if (!isNaN(val) && val > 0) setBudgetMutation.mutate(val);
             }}
             disabled={setBudgetMutation.isPending || !budgetInput || parseFloat(budgetInput) <= 0}
-            className="bg-amber-500 hover:bg-amber-600 text-white h-9 px-4 text-sm"
+            className="bg-gold-500 hover:bg-gold-600 text-white h-9 px-4 text-sm"
           >
             {setBudgetMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Set Budget'}
           </Button>
@@ -436,20 +436,20 @@ export default function ProjectView() {
         {project?.carbonBudget != null && summary != null && (
           <div className="mt-4">
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-gray-500">Usage</span>
-              <span className={`font-semibold ${summary.totalCO2 >= project.carbonBudget ? 'text-red-600' : 'text-green-600'}`}>
+              <span className="text-warm-500">Usage</span>
+              <span className={`font-semibold ${summary.totalCO2 >= project.carbonBudget ? 'text-red-600' : 'text-forest-600'}`}>
                 {((summary.totalCO2 / project.carbonBudget) * 100).toFixed(1)}%
               </span>
             </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-2 bg-warm-100 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  summary.totalCO2 >= project.carbonBudget ? 'bg-red-500' : 'bg-green-500'
+                  summary.totalCO2 >= project.carbonBudget ? 'bg-red-500' : 'bg-forest-500'
                 }`}
                 style={{ width: `${Math.min((summary.totalCO2 / project.carbonBudget) * 100, 100)}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-warm-500 mt-1">
               {summary.totalCO2.toFixed(4)} / {project.carbonBudget.toFixed(4)} kg CO₂e
             </p>
           </div>
@@ -458,11 +458,11 @@ export default function ProjectView() {
 
       {/* ── Alerts Panel ─────────────────────────────────────────────────── */}
       {alerts.length > 0 && (
-        <div className="bg-white rounded-xl border border-red-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-red-100 shadow-warm-sm overflow-hidden">
           <div className="flex items-center justify-between px-5 py-3 border-b border-red-50 bg-red-50">
             <div className="flex items-center gap-2">
               <Bell className="h-4 w-4 text-red-600" />
-              <h3 className="text-sm font-semibold text-red-700">Threshold Alerts</h3>
+              <h3 className="font-display text-sm font-semibold text-red-700">Threshold Alerts</h3>
               {unreadCount > 0 && (
                 <span className="text-xs font-bold bg-red-600 text-white px-1.5 py-0.5 rounded-full">
                   {unreadCount} new
@@ -518,7 +518,7 @@ export default function ProjectView() {
           {/* Log Event dialog */}
           <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) { setFormError(''); } }}>
             <DialogTrigger asChild>
-              <Button className="bg-green-600 hover:bg-green-700 text-white gap-2 shadow-sm">
+              <Button className="bg-forest-900 hover:bg-forest-800 text-warm-50 gap-2 shadow-warm-sm">
                 <Plus className="h-4 w-4" />
                 Log Event
               </Button>
@@ -605,7 +605,7 @@ export default function ProjectView() {
                 <Button
                   type="submit"
                   disabled={createMutation.isPending}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full bg-forest-900 hover:bg-forest-800 text-warm-50"
                 >
                   {createMutation.isPending ? (
                     <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging...</>
@@ -617,10 +617,10 @@ export default function ProjectView() {
         </div>
 
         {/* ── Filter Bar ─────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-4 mb-4 space-y-3">
+        <div className="bg-white rounded-xl border border-warm-200 shadow-warm-sm p-4 mb-4 space-y-3">
           <div className="flex items-center gap-2 flex-wrap">
-            <SlidersHorizontal className="h-4 w-4 text-gray-400 flex-shrink-0" />
-            <span className="text-sm font-medium text-gray-600">Filters</span>
+            <SlidersHorizontal className="h-4 w-4 text-warm-400 flex-shrink-0" />
+            <span className="text-sm font-medium text-warm-700">Filters</span>
             {hasActiveFilters && (
               <button
                 onClick={clearFilters}
@@ -657,7 +657,7 @@ export default function ProjectView() {
               <select
                 value={sortBy}
                 onChange={(e) => { setSortBy(e.target.value as SortBy); setPage(1); }}
-                className="h-9 px-3 text-sm border border-gray-200 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                className="h-9 px-3 text-sm border border-warm-200 rounded-md bg-white text-warm-800 focus:outline-none focus:ring-2 focus:ring-forest-700 focus:border-forest-700"
               >
                 {SORT_OPTIONS.map((o) => (
                   <option key={o.value} value={o.value}>{o.label}</option>
@@ -668,8 +668,8 @@ export default function ProjectView() {
                 title={sortOrder === 'desc' ? 'Descending — click for ascending' : 'Ascending — click for descending'}
                 className={`h-9 w-9 flex items-center justify-center rounded-md border text-sm transition-colors ${
                   sortOrder === 'asc'
-                    ? 'border-green-500 bg-green-50 text-green-700'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                    ? 'border-forest-700 bg-forest-50 text-forest-700'
+                    : 'border-warm-200 bg-white text-warm-600 hover:border-warm-300'
                 }`}
               >
                 <ArrowUpDown className="h-4 w-4" />
@@ -683,8 +683,8 @@ export default function ProjectView() {
               onClick={() => { setTypeFilter(''); setPage(1); }}
               className={`px-3 py-1 rounded-full text-xs font-medium border transition-all ${
                 typeFilter === ''
-                  ? 'bg-green-600 text-white border-green-600'
-                  : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                  ? 'bg-forest-900 text-warm-50 border-forest-900'
+                  : 'bg-white text-warm-600 border-warm-200 hover:border-warm-300'
               }`}
             >
               All Types
@@ -699,10 +699,10 @@ export default function ProjectView() {
                   className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-all ${
                     active
                       ? `${cfg.bg} ${cfg.color} border-current`
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                      : 'bg-white text-warm-600 border-warm-200 hover:border-warm-300'
                   }`}
                 >
-                  <span className={active ? cfg.color : 'text-gray-400'}>{cfg.icon}</span>
+                  <span className={active ? cfg.color : 'text-warm-400'}>{cfg.icon}</span>
                   {t}
                 </button>
               );
@@ -711,20 +711,20 @@ export default function ProjectView() {
         </div>
 
         {/* ── Table ──────────────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-xl border border-warm-200 shadow-warm-sm overflow-hidden">
           {impactsLoading ? (
             <div className="flex items-center justify-center py-16">
-              <Loader2 className="h-6 w-6 animate-spin text-green-600" />
+              <Loader2 className="h-6 w-6 animate-spin text-forest-600" />
             </div>
           ) : impacts.length === 0 ? (
             <div className="text-center py-16">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gray-50 mb-3">
-                <Activity className="h-6 w-6 text-gray-400" />
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-warm-50 mb-3">
+                <Activity className="h-6 w-6 text-warm-400" />
               </div>
-              <p className="text-gray-500 font-medium">
+              <p className="text-warm-700 font-medium">
                 {hasActiveFilters ? 'No events match your filters' : 'No impact events yet'}
               </p>
-              <p className="text-gray-400 text-sm mt-1">
+              <p className="text-warm-500 text-sm mt-1">
                 {hasActiveFilters
                   ? 'Try adjusting your search or filters'
                   : 'Click "Log Event" to record your first emission'}
@@ -732,7 +732,7 @@ export default function ProjectView() {
               {hasActiveFilters && (
                 <button
                   onClick={clearFilters}
-                  className="mt-3 text-sm text-green-600 hover:text-green-700 font-medium"
+                  className="mt-3 text-sm text-forest-700 hover:text-forest-900 font-medium"
                 >
                   Clear filters
                 </button>
@@ -741,26 +741,26 @@ export default function ProjectView() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="bg-gray-50">
-                  <TableHead className="font-semibold text-gray-600">Event</TableHead>
-                  <TableHead className="font-semibold text-gray-600">Type</TableHead>
-                  <TableHead className="font-semibold text-gray-600">Unit Value</TableHead>
-                  <TableHead className="font-semibold text-gray-600 text-right">Carbon Score</TableHead>
-                  <TableHead className="font-semibold text-gray-600">Intensity</TableHead>
-                  <TableHead className="font-semibold text-gray-600 hidden sm:table-cell">Date</TableHead>
+                <TableRow className="bg-warm-50">
+                  <TableHead className="font-semibold text-warm-700">Event</TableHead>
+                  <TableHead className="font-semibold text-warm-700">Type</TableHead>
+                  <TableHead className="font-semibold text-warm-700">Unit Value</TableHead>
+                  <TableHead className="font-semibold text-warm-700 text-right">Carbon Score</TableHead>
+                  <TableHead className="font-semibold text-warm-700">Intensity</TableHead>
+                  <TableHead className="font-semibold text-warm-700 hidden sm:table-cell">Date</TableHead>
                   <TableHead className="w-[88px]" />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {impacts.map((log: ImpactLog) => {
-                  const cfg = TYPE_CONFIG[log.type] ?? { icon: null, color: 'text-gray-700', bg: 'bg-gray-50' };
+                  const cfg = TYPE_CONFIG[log.type] ?? { icon: null, color: 'text-warm-700', bg: 'bg-warm-50' };
                   const intensity = getCarbonIntensity(log.carbonScore);
                   return (
-                    <TableRow key={log.id} className="hover:bg-gray-50 transition-colors">
+                    <TableRow key={log.id} className="hover:bg-warm-50 transition-colors">
                       <TableCell>
-                        <p className="font-medium text-gray-900">{log.name}</p>
+                        <p className="font-medium text-warm-950">{log.name}</p>
                         {log.description && (
-                          <p className="text-xs text-gray-400 mt-0.5 line-clamp-1">{log.description}</p>
+                          <p className="text-xs text-warm-500 mt-0.5 line-clamp-1">{log.description}</p>
                         )}
                       </TableCell>
                       <TableCell>
@@ -769,19 +769,19 @@ export default function ProjectView() {
                           {log.type}
                         </span>
                       </TableCell>
-                      <TableCell className="text-gray-600 font-mono text-sm">
+                      <TableCell className="text-warm-700 font-mono text-sm">
                         {log.unitValue}
                       </TableCell>
-                      <TableCell className="text-right font-bold font-mono text-gray-900">
+                      <TableCell className="text-right font-bold font-mono text-warm-950">
                         {log.carbonScore.toFixed(4)}
-                        <span className="text-xs font-normal text-gray-400 ml-1">kg</span>
+                        <span className="text-xs font-normal text-warm-500 ml-1">kg</span>
                       </TableCell>
                       <TableCell>
                         <span className={`text-xs font-semibold ${intensity.color}`}>
                           {intensity.label}
                         </span>
                       </TableCell>
-                      <TableCell className="hidden sm:table-cell text-xs text-gray-400">
+                      <TableCell className="hidden sm:table-cell text-xs text-warm-500">
                         {new Date(log.createdAt).toLocaleDateString('en-IN', {
                           day: '2-digit', month: 'short', year: 'numeric',
                         })}
@@ -790,7 +790,7 @@ export default function ProjectView() {
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => openEditDialog(log)}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-blue-500 hover:bg-blue-50 transition-colors"
+                            className="p-1.5 rounded-lg text-warm-400 hover:text-forest-700 hover:bg-forest-50 transition-colors"
                             title="Edit event"
                           >
                             <Pencil className="h-4 w-4" />
@@ -798,7 +798,7 @@ export default function ProjectView() {
                           <button
                             onClick={() => deleteMutation.mutate(log.id)}
                             disabled={deleteMutation.isPending}
-                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            className="p-1.5 rounded-lg text-warm-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                             title="Delete event"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -814,21 +814,21 @@ export default function ProjectView() {
 
           {/* ── Pagination ───────────────────────────────────────────────── */}
           {pagination && pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
-              <p className="text-sm text-gray-500">
+            <div className="flex items-center justify-between px-4 py-3 border-t border-warm-100 bg-warm-50">
+              <p className="text-sm text-warm-600">
                 Showing{' '}
-                <span className="font-medium text-gray-900">
+                <span className="font-medium text-warm-950">
                   {(pagination.page - 1) * pagination.limit + 1}–
                   {Math.min(pagination.page * pagination.limit, pagination.total)}
                 </span>{' '}
-                of <span className="font-medium text-gray-900">{pagination.total}</span> events
+                of <span className="font-medium text-warm-950">{pagination.total}</span> events
               </p>
 
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPage((p) => p - 1)}
                   disabled={page <= 1 || isFetching}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-warm-700 bg-white border border-warm-200 rounded-lg hover:bg-warm-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   <ChevronLeft className="h-4 w-4" /> Prev
                 </button>
@@ -844,7 +844,7 @@ export default function ProjectView() {
                     }, [])
                     .map((p, i) =>
                       p === '...' ? (
-                        <span key={`ellipsis-${i}`} className="px-1 text-gray-400 text-sm">…</span>
+                        <span key={`ellipsis-${i}`} className="px-1 text-warm-400 text-sm">…</span>
                       ) : (
                         <button
                           key={p}
@@ -852,8 +852,8 @@ export default function ProjectView() {
                           disabled={isFetching}
                           className={`w-8 h-8 text-sm font-medium rounded-lg transition-colors ${
                             page === p
-                              ? 'bg-green-600 text-white'
-                              : 'text-gray-600 hover:bg-gray-100'
+                              ? 'bg-forest-900 text-warm-50'
+                              : 'text-warm-700 hover:bg-warm-100'
                           }`}
                         >
                           {p}
@@ -865,7 +865,7 @@ export default function ProjectView() {
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={page >= pagination.totalPages || isFetching}
-                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-warm-700 bg-white border border-warm-200 rounded-lg hover:bg-warm-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                 >
                   Next <ChevronRight className="h-4 w-4" />
                 </button>
@@ -877,25 +877,25 @@ export default function ProjectView() {
 
       {/* ── Edit Impact Dialog ──────────────────────────────────────────────── */}
       <Dialog open={editOpen} onOpenChange={(o) => { setEditOpen(o); if (!o) setEditError(''); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-warm-50 border-warm-200">
           <DialogHeader>
-            <DialogTitle>Edit Impact Event</DialogTitle>
+            <DialogTitle className="font-display text-warm-950">Edit Impact Event</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleEdit} className="space-y-4 pt-2">
             <div className="space-y-1.5">
-              <Label className="text-gray-700 font-medium">
+              <Label className="text-warm-800 font-medium">
                 Event Name <span className="text-red-500">*</span>
               </Label>
               <Input
                 placeholder="e.g. Image processing batch"
                 value={editData.name}
                 onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                className="h-10"
+                className="h-10 border-warm-200 bg-white"
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-gray-700 font-medium">
+              <Label className="text-warm-800 font-medium">
                 Event Type <span className="text-red-500">*</span>
               </Label>
               <div className="grid grid-cols-2 gap-2">
@@ -908,8 +908,8 @@ export default function ProjectView() {
                       onClick={() => setEditData({ ...editData, type: t })}
                       className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium transition-all ${
                         editData.type === t
-                          ? 'border-green-500 bg-green-50 text-green-700'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300'
+                          ? 'border-forest-700 bg-forest-50 text-forest-800'
+                          : 'border-warm-200 bg-white text-warm-700 hover:border-warm-300'
                       }`}
                     >
                       <span className={cfg.color}>{cfg.icon}</span>
@@ -921,7 +921,7 @@ export default function ProjectView() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-gray-700 font-medium">
+              <Label className="text-warm-800 font-medium">
                 Unit Value <span className="text-red-500">*</span>
               </Label>
               <Input
@@ -931,22 +931,22 @@ export default function ProjectView() {
                 placeholder="e.g. 10.5"
                 value={editData.unitValue}
                 onChange={(e) => setEditData({ ...editData, unitValue: e.target.value })}
-                className="h-10"
+                className="h-10 border-warm-200 bg-white"
               />
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-warm-500">
                 Carbon score will be recalculated automatically
               </p>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-gray-700 font-medium">
-                Description <span className="text-gray-400 font-normal">(optional)</span>
+              <Label className="text-warm-800 font-medium">
+                Description <span className="text-warm-500 font-normal">(optional)</span>
               </Label>
               <Input
                 placeholder="Additional context"
                 value={editData.description}
                 onChange={(e) => setEditData({ ...editData, description: e.target.value })}
-                className="h-10"
+                className="h-10 border-warm-200 bg-white"
               />
             </div>
 
@@ -960,7 +960,7 @@ export default function ProjectView() {
               <Button
                 type="button"
                 variant="outline"
-                className="flex-1"
+                className="flex-1 border-warm-200 text-warm-700"
                 onClick={() => setEditOpen(false)}
               >
                 Cancel
@@ -968,7 +968,7 @@ export default function ProjectView() {
               <Button
                 type="submit"
                 disabled={editMutation.isPending}
-                className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                className="flex-1 bg-forest-900 hover:bg-forest-800 text-warm-50"
               >
                 {editMutation.isPending ? (
                   <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
