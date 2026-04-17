@@ -1,41 +1,51 @@
-# Class Diagram — GreenPulse
+# Class Diagram - GreenPulse
 
-## Overview
-
-This class diagram shows the major classes, their attributes, methods, and relationships across the GreenPulse platform. The design follows **Clean Architecture** (Controller → Service → Repository) with strong **OOP principles** and **design patterns**.
-
-> [!NOTE]
-> Classes marked with `🔜 Planned` are part of the architectural vision and will be implemented in future milestones. All other classes are currently implemented.
-
----
+This class diagram reflects the current implementation in `backend/src`.
 
 ```mermaid
 classDiagram
     direction TB
 
-    %% ===== DOMAIN MODELS & DTOs (Implemented) =====
-
     class User {
-        -id: int
-        -email: string
-        -password: string
-        -name: string
+        +id: int
+        +email: string
+        +password: string_nullable
+        +googleId: string_nullable
+        +name: string
+        +createdAt: DateTime
+        +updatedAt: DateTime
     }
 
     class Project {
-        -id: int
-        -name: string
-        -description: string
-        -userId: int
+        +id: int
+        +name: string
+        +description: string_nullable
+        +userId: int
+        +carbonBudget: float_nullable
+        +createdAt: DateTime
+        +updatedAt: DateTime
     }
 
     class ImpactLog {
-        -id: int
-        -name: string
-        -type: ImpactType
-        -unitValue: float
-        -carbonScore: float
-        -projectId: int
+        +id: int
+        +name: string
+        +description: string_nullable
+        +type: ImpactType
+        +unitValue: float
+        +carbonScore: float
+        +projectId: int
+        +createdAt: DateTime
+        +updatedAt: DateTime
+    }
+
+    class Alert {
+        +id: int
+        +projectId: int
+        +message: string
+        +totalCO2: float
+        +budget: float
+        +isRead: boolean
+        +createdAt: DateTime
     }
 
     class ImpactType {
@@ -48,7 +58,11 @@ classDiagram
 
     class ImpactEvent {
         <<abstract>>
-        #unitValue: float
+        +id: int
+        +name: string
+        +unitValue: float
+        +type: ImpactType
+        +createdAt: Date
         +calculateCO2(): float*
     }
 
@@ -68,189 +82,189 @@ classDiagram
         +calculateCO2(): float
     }
 
-    %% ===== SERVICE LAYER (Implemented) =====
-
-    class ImpactService {
-        -impactRepo: ImpactRepository
-        -projectRepo: ProjectRepository
-        +createImpact(dto: CreateImpactDTO): ImpactLog
-        +getAllImpacts(projectId: int): ImpactLog[]
-        +updateImpact(id: int, dto: UpdateImpactDTO): ImpactLog
-        +deleteImpact(id: int): void
-        +getSummary(projectId: int): Summary
-        -calculateCO2(type: ImpactType, val: float): float
-        -verifyProjectOwnership(projectId: int, userId: int): Project
+    class AuthController {
+        -authService: AuthService
+        -userRepository: UserRepository
+        +register(req, res): void
+        +login(req, res): void
+        +me(req, res): void
+        +googleCallback(req, res): void
     }
 
-    class ProjectService {
-        -projectRepo: ProjectRepository
-        +createProject(dto: CreateProjectDTO): Project
-        +getProjectById(id: int): Project
-        +getAllProjects(userId: int): Project[]
-        +updateProject(id: int, dto: UpdateProjectDTO): Project
-        +deleteProject(id: int): void
-        +getProjectSummary(id: int): Summary
+    class ProjectController {
+        -projectService: ProjectService
+        -reportingService: ReportingService
+        +createProject(req, res): void
+        +getProject(req, res): void
+        +getAllProjects(req, res): void
+        +updateProject(req, res): void
+        +deleteProject(req, res): void
+        +getProjectSummary(req, res): void
+        +getProjectReport(req, res): void
+        +setBudget(req, res): void
+        +getAlerts(req, res): void
+        +markAlertsRead(req, res): void
     }
-
-    class AuthService {
-        -userRepo: UserRepository
-        +register(dto: RegisterDTO): AuthResponse
-        +login(dto: LoginDTO): AuthResponse
-        -hashPassword(password: string): string
-        -comparePassword(plain: string, hashed: string): boolean
-        -generateToken(userId: int): string
-    }
-
-    %% ===== PLANNED SERVICE LAYER =====
-
-    class ReportingService {
-        <<planned>>
-        -strategy: IReportStrategy
-        +setStrategy(strategy: IReportStrategy): void
-        +generateReport(projectId: int): ReportFile
-    }
-
-    class NotificationService {
-        <<planned>>
-        -observers: INotificationObserver[]
-        +subscribe(obs: INotificationObserver): void
-        +notify(event: AlertEvent): void
-        +checkThreshold(projectId: int): void
-    }
-
-    %% ===== PLANNED STRATEGY & OBSERVER INTERFACES =====
-
-    class IReportStrategy {
-        <<interface - planned>>
-        +generate(data: ReportData): ReportFile
-    }
-
-    class PdfReportStrategy {
-        <<planned>>
-        +generate(data: ReportData): ReportFile
-    }
-
-    class CsvReportStrategy {
-        <<planned>>
-        +generate(data: ReportData): ReportFile
-    }
-
-    class INotificationObserver {
-        <<interface - planned>>
-        +onEvent(event: AlertEvent): void
-    }
-
-    class EmailNotificationObserver {
-        <<planned>>
-        +onEvent(event: AlertEvent): void
-    }
-
-    class InAppNotificationObserver {
-        <<planned>>
-        +onEvent(event: AlertEvent): void
-    }
-
-    %% ===== CONTROLLER LAYER (Implemented) =====
 
     class ImpactController {
         -impactService: ImpactService
         +createImpact(req, res): void
-        +getAllImpacts(req, res): void
         +getImpact(req, res): void
+        +getAllImpacts(req, res): void
         +updateImpact(req, res): void
         +deleteImpact(req, res): void
         +getSummary(req, res): void
     }
 
-    class ProjectController {
-        -projectService: ProjectService
-        +createProject(req, res): void
-        +getAllProjects(req, res): void
-        +getProject(req, res): void
-        +updateProject(req, res): void
-        +deleteProject(req, res): void
-        +getProjectSummary(req, res): void
+    class AuthService {
+        -userRepository: UserRepository
+        +register(data): AuthResponse
+        +login(data): AuthResponse
+        +generateToken(userId): string
+        -hashPassword(password): string
+        -comparePassword(plain, hash): boolean
     }
 
-    class AuthController {
-        -authService: AuthService
-        +register(req, res): void
-        +login(req, res): void
+    class ProjectService {
+        -projectRepository: ProjectRepository
+        -alertRepository: AlertRepository
+        +createProject(data, userId): Project
+        +getProjectById(id, userId): Project
+        +getAllProjects(userId): ProjectList
+        +updateProject(id, data, userId): Project
+        +deleteProject(id, userId): void
+        +getProjectSummary(id, userId): Summary
+        +setBudget(id, budget, userId): Project
+        +getAlerts(id, userId): AlertList
+        +markAlertsRead(id, userId): void
     }
 
-    %% ===== REPOSITORIES (Implemented) =====
-
-    class ImpactRepository {
-        +create(data: ImpactLog): ImpactLog
-        +findById(id: int): ImpactLog
-        +findByProjectId(id: int): ImpactLog[]
-        +update(id: int, data): ImpactLog
-        +delete(id: int): void
-        +getSummaryByProjectId(id: int): Summary
+    class ImpactService {
+        -impactRepository: ImpactRepository
+        -projectRepository: ProjectRepository
+        -notificationService: NotificationService
+        +createImpact(data, projectId, userId): ImpactLog
+        +getImpactById(id, userId): ImpactLog
+        +getAllImpacts(projectId, userId, filters): ImpactList
+        +updateImpact(id, data, userId): ImpactLog
+        +deleteImpact(id, userId): void
+        +getSummary(projectId, userId): Summary
+        -verifyProjectOwnership(projectId, userId): Project
+        -calculateCO2(type, unitValue): float
     }
 
-    class ProjectRepository {
-        +create(data: Project): Project
-        +findById(id: int): Project
-        +findByUserId(id: int): Project[]
-        +update(id: int, data): Project
-        +delete(id: int): void
-        +getSummary(id: int): Summary
+    class NotificationService {
+        <<singleton>>
+        -observers: ThresholdObserverList
+        -alertRepo: AlertRepository
+        +getInstance(): NotificationService
+        +subscribe(observer): void
+        +unsubscribe(observer): void
+        +notifyThresholdExceeded(projectId, totalCO2, budget): PromiseVoid
+    }
+
+    class ReportingService {
+        -strategy: IReportStrategy
+        -impactRepo: ImpactRepository
+        -projectRepo: ProjectRepository
+        +setStrategy(strategy): void
+        +generateReport(projectId): ReportFile
+    }
+
+    class IReportStrategy {
+        <<interface>>
+        +generate(data): ReportContent
+        +contentType: string
+        +fileExtension: string
+    }
+
+    class PdfReportStrategy {
+        +generate(data): Buffer
+    }
+
+    class CsvReportStrategy {
+        +generate(data): string
     }
 
     class UserRepository {
-        +create(data: RegisterDTO): User
-        +findByEmail(email: string): User
-        +findById(id: int): User
+        +create(data): User
+        +findByEmail(email): UserNullable
+        +findById(id): UserNullable
+        +findByGoogleId(googleId): UserNullable
+        +upsertGoogleUser(data): User
+        +linkGoogleId(userId, googleId): User
     }
 
-    %% ===== RELATIONSHIPS =====
+    class ProjectRepository {
+        +create(data): Project
+        +findById(id): ProjectNullable
+        +findByUserId(userId): ProjectList
+        +update(id, data): Project
+        +delete(id): void
+        +getSummary(id): Summary
+    }
+
+    class ImpactRepository {
+        +create(data): ImpactLog
+        +findById(id): ImpactLogNullable
+        +findByProjectId(projectId, filters): ImpactList
+        +update(id, data): ImpactLog
+        +delete(id): void
+        +getSummaryByProjectId(projectId): Summary
+    }
+
+    class AlertRepository {
+        +create(data): Alert
+        +findByProjectId(projectId): AlertList
+        +markRead(id): Alert
+        +markAllRead(projectId): void
+        +countUnread(projectId): int
+    }
 
     User "1" --> "*" Project : owns
     Project "1" --> "*" ImpactLog : contains
+    Project "1" --> "*" Alert : raises
     ImpactLog --> ImpactType
-    
-    ImpactEvent <|-- ComputeEvent : extends
-    ImpactEvent <|-- StorageEvent : extends
-    ImpactEvent <|-- NetworkEvent : extends
-    ImpactEvent <|-- ApiCallEvent : extends
-    
-    ImpactController --> ImpactService
-    ProjectController --> ProjectService
-    AuthController --> AuthService
 
+    ImpactEvent <|-- ComputeEvent
+    ImpactEvent <|-- StorageEvent
+    ImpactEvent <|-- NetworkEvent
+    ImpactEvent <|-- ApiCallEvent
+
+    AuthController --> AuthService
+    AuthController --> UserRepository
+    ProjectController --> ProjectService
+    ProjectController --> ReportingService
+    ImpactController --> ImpactService
+
+    AuthService --> UserRepository
+    ProjectService --> ProjectRepository
+    ProjectService --> AlertRepository
     ImpactService --> ImpactRepository
     ImpactService --> ProjectRepository
-    ImpactService ..> ImpactEvent : creates via Factory
-    ProjectService --> ProjectRepository
-    AuthService --> UserRepository
-    
+    ImpactService --> NotificationService
+    ImpactService ..> ImpactEvent : factory + polymorphism
+
+    NotificationService --> AlertRepository
+    ReportingService --> ProjectRepository
+    ReportingService --> ImpactRepository
     ReportingService --> IReportStrategy
-    IReportStrategy <|.. PdfReportStrategy : implements
-    IReportStrategy <|.. CsvReportStrategy : implements
-    
-    NotificationService --> INotificationObserver
-    INotificationObserver <|.. EmailNotificationObserver : implements
-    INotificationObserver <|.. InAppNotificationObserver : implements
+    IReportStrategy <|.. PdfReportStrategy
+    IReportStrategy <|.. CsvReportStrategy
 ```
 
----
+## Pattern Mapping
 
-## Design Patterns in the Class Diagram
+| Pattern | Location | Purpose |
+|---|---|---|
+| Factory Method | `ImpactService.calculateCO2()` | Chooses event subclass from `ImpactType` |
+| Polymorphism | `ImpactEvent` hierarchy | Type-specific emission formulas |
+| Strategy | `ReportingService` + report strategies | Runtime selection of PDF/CSV generation |
+| Observer (lightweight) | `NotificationService` | Threshold notification fan-out + durable alert record |
+| Repository | `*.repository.ts` classes | Database abstraction over Prisma |
 
-| Pattern | Where Applied | Status | Purpose |
-|---------|---------------|--------|---------|
-| **Factory Method** | `ImpactService.calculateCO2()` | ✅ | Creates `ImpactEvent` subclasses based on `ImpactType` |
-| **Strategy** | `ReportingService` + `IReportStrategy` | 🔜 | Swappable report formats (PDF/CSV) at runtime |
-| **Observer** | `NotificationService` | 🔜 | Decouples threshold checks from alert delivery |
-| **Repository** | `ImpactRepository`, `ProjectRepository` | ✅ | Abstracts database operations (Prisma) from services |
-| **Polymorphism** | `ImpactEvent` hierarchy | ✅ | Subclass-specific `calculateCO2()` behavior |
+## Planned Extensions (Not Implemented Yet)
 
-## OOP Principles
-
-| Principle | Application |
-|-----------|-------------|
-| **Encapsulation** | Services hide business logic; Repositories hide data access; Models satisfy SRP |
-| **Abstraction** | Abstract base class `ImpactEvent` hides calculation details; Interfaces defined for Strategy/Observer |
-| **Inheritance** | `ComputeEvent`, `StorageEvent`, etc. inherit from `ImpactEvent` |
-| **Polymorphism** | Calculation engine executes the correct subclass method at runtime without `instanceof` checks |
+- Organization and team domain classes
+- Role/permission classes for RBAC
+- Additional notification channels (email/websocket/webhook)

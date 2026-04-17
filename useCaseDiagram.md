@@ -1,50 +1,46 @@
-# Use Case Diagram — GreenPulse
+# Use Case Diagram - GreenPulse
 
-## Overview
-
-This diagram shows all major use cases for the GreenPulse platform, organized by the three primary actors: **User**, **Admin**, and **System**.
-
-> [!NOTE]
-> Use cases marked with ✅ are currently implemented. Use cases marked with 🔜 are planned for future milestones.
-
----
+Use cases marked `Implemented` are available now. `Planned` items are future roadmap goals.
 
 ```mermaid
 graph TB
-    subgraph GreenPulse Platform
-        UC1["✅ Register / Login"]
-        UC2["🔜 Manage Profile"]
-        UC3["✅ Create Project"]
-        UC4["✅ View All Projects"]
-        UC5["✅ Update Project"]
-        UC6["✅ Delete Project"]
-        UC7["✅ Log Impact Event"]
-        UC8["✅ View Impact Events"]
-        UC9["✅ View Project Summary"]
-        UC10["✅ Filter & Search Impacts"]
-        UC11["🔜 View Analytics Dashboard"]
-        UC12["🔜 Generate PDF Report"]
-        UC13["🔜 Export CSV Data"]
-        UC14["🔜 Set Carbon Threshold Alert"]
-        UC15["🔜 View Notifications"]
-        UC16["🔜 Manage Organization"]
-        UC17["🔜 Manage Team Members"]
-        UC18["🔜 Manage Users"]
-        UC19["🔜 View Audit Logs"]
-        UC20["🔜 Configure Platform Settings"]
-        UC21["🔜 View Organization Analytics"]
-        UC22["✅ Auto-Calculate Carbon Score"]
-        UC23["✅ Detect Impact Type"]
-        UC24["🔜 Monitor Carbon Thresholds"]
-        UC25["🔜 Send Threshold Alerts"]
-        UC26["🔜 Schedule Report Generation"]
-    end
-
     User((User))
-    Admin((Admin))
     System((System))
 
-    %% User use cases
+    subgraph Implemented
+        UC1[Register with email/password]
+        UC2[Login with email/password]
+        UC3[Login with Google OAuth]
+        UC4[View profile]
+        UC5[Create project]
+        UC6[List projects]
+        UC7[Update project]
+        UC8[Delete project]
+        UC9[Create impact log]
+        UC10[View impact logs]
+        UC11[Update impact log]
+        UC12[Delete impact log]
+        UC13[Filter/search/sort/paginate impacts]
+        UC14[View project summary]
+        UC15[View analytics dashboard]
+        UC16[Download PDF report]
+        UC17[Download CSV report]
+        UC18[Set carbon budget]
+        UC19[Clear carbon budget]
+        UC20[View threshold alerts]
+        UC21[Mark alerts as read]
+        UC22[Auto-detect impact type]
+        UC23[Calculate CO2 via polymorphism]
+        UC24[Persist threshold alert]
+    end
+
+    subgraph Planned
+        UC25[Organization and team management]
+        UC26[Role-based access control]
+        UC27[Real-time alert channel]
+        UC28[Audit logs and compliance tools]
+    end
+
     User --> UC1
     User --> UC2
     User --> UC3
@@ -62,53 +58,49 @@ graph TB
     User --> UC15
     User --> UC16
     User --> UC17
+    User --> UC18
+    User --> UC19
+    User --> UC20
+    User --> UC21
 
-    %% Admin use cases
-    Admin --> UC1
-    Admin --> UC18
-    Admin --> UC19
-    Admin --> UC20
-    Admin --> UC21
-    Admin --> UC11
-    Admin --> UC12
+    System --> UC22
+    System --> UC23
+    System --> UC24
 
-    %% System-driven (internal)
-    UC7 -.->|triggers| UC23
-    UC23 -.->|polymorphic calc| UC22
-    UC22 -.->|checks| UC24
-    UC24 -.->|if exceeded| UC25
-    UC11 -.->|triggers| UC26
+    UC9 -. triggers .-> UC22
+    UC22 -. selects subclass .-> UC23
+    UC9 -. after create check .-> UC24
 ```
 
----
+## Use Case Status Table
 
-## Use Case Descriptions
-
-| # | Use Case | Actors | Status | Description |
-|---|----------|--------|--------|-------------|
-| UC1 | Register / Login | All | ✅ | Create account or authenticate with JWT. |
-| UC2 | Manage Profile | User | 🔜 | Update personal info (name, email) and change password. |
-| UC3 | Create Project | User | ✅ | Define a new digital project (app, service) for carbon tracking. |
-| UC4 | View All Projects | User | ✅ | List all projects owned by the user with summary statistics. |
-| UC5 | Update Project | User | ✅ | Modify project metadata. Ownership verified before mutation. |
-| UC6 | Delete Project | User | ✅ | Remove a project and cascade delete all its impact logs. |
-| UC7 | Log Impact Event | User | ✅ | Record an infrastructure event (Compute, Storage, etc.). Score auto-calculated. |
-| UC8 | View Impact Events | User | ✅ | Browse history of logged events with pagination. |
-| UC9 | View Project Summary | User | ✅ | See aggregated carbon totals and breakdown by impact type. |
-| UC10 | Filter & Search Impacts | User | ✅ | Sort and filter logs by type, date, or keyword. |
-| UC11 | View Analytics Dashboard | User, Admin | 🔜 | Real-time charts showing emission trends and milestones. |
-| UC12 | Generate PDF Report | User, Admin | 🔜 | Download a formatted PDF compliance report (Strategy Pattern). |
-| UC13 | Export CSV Data | User | 🔜 | Export raw impact data for external analysis. |
-| UC14 | Set Carbon Threshold Alert | User | 🔜 | Configure CO2 limits per project. |
-| UC15 | View Notifications | User | 🔜 | See alerts for thresholds, reports, and system messages. |
-| UC16 | Manage Organization | User | 🔜 | Create or join a multi-tenant organization. |
-| UC17 | Manage Team Members | User | 🔜 | Add or remove members from an organization. |
-| UC18 | Manage Users | Admin | 🔜 | Create, update, or deactivate system users. |
-| UC19 | View Audit Logs | Admin | 🔜 | Review immutable logs of all system actions. |
-| UC20 | Configure Platform Settings | Admin | 🔜 | Update global emission factors and system configs. |
-| UC21 | View Organization Analytics | Admin | 🔜 | Cross-project analytics for the entire organization. |
-| UC22 | Auto-Calculate Carbon Score | System | ✅ | Factory creates subclass -> Polymorphic calculation of CO2. |
-| UC23 | Detect Impact Type | System | ✅ | Identify event type to instantiate correct `ImpactEvent` subclass. |
-| UC24 | Monitor Carbon Thresholds | System | 🔜 | Check project totals against limits after every write. |
-| UC25 | Send Threshold Alerts | System | 🔜 | Notify users via Observer Pattern when limits are breached. |
-| UC26 | Schedule Report Generation | System | 🔜 | Automated periodic report generation. |
+| ID | Use Case | Actor | Status |
+|---|---|---|---|
+| UC1 | Register with email/password | User | Implemented |
+| UC2 | Login with email/password | User | Implemented |
+| UC3 | Login with Google OAuth | User | Implemented |
+| UC4 | View profile | User | Implemented |
+| UC5 | Create project | User | Implemented |
+| UC6 | List projects | User | Implemented |
+| UC7 | Update project | User | Implemented |
+| UC8 | Delete project | User | Implemented |
+| UC9 | Create impact log | User | Implemented |
+| UC10 | View impact logs | User | Implemented |
+| UC11 | Update impact log | User | Implemented |
+| UC12 | Delete impact log | User | Implemented |
+| UC13 | Filter/search/sort/paginate impacts | User | Implemented |
+| UC14 | View project summary | User | Implemented |
+| UC15 | View analytics dashboard | User | Implemented |
+| UC16 | Download PDF report | User | Implemented |
+| UC17 | Download CSV report | User | Implemented |
+| UC18 | Set carbon budget | User | Implemented |
+| UC19 | Clear carbon budget | User | Implemented |
+| UC20 | View threshold alerts | User | Implemented |
+| UC21 | Mark alerts as read | User | Implemented |
+| UC22 | Auto-detect impact type | System | Implemented |
+| UC23 | Calculate CO2 via polymorphism | System | Implemented |
+| UC24 | Persist threshold alert | System | Implemented |
+| UC25 | Organization and team management | User/Admin | Planned |
+| UC26 | Role-based access control | Admin/System | Planned |
+| UC27 | Real-time alert channel | System | Planned |
+| UC28 | Audit logs and compliance tools | Admin | Planned |
