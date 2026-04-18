@@ -198,7 +198,7 @@ export default function ProjectView() {
 
     setStreamStatus('connecting');
 
-    const stopStream = projectService.streamAlerts(
+    const stopStream = projectService.streamAlertsSocket(
       projectId,
       (event: ProjectAlertStreamEvent) => {
         setStreamStatus('live');
@@ -209,7 +209,7 @@ export default function ProjectView() {
         queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'alerts'] });
       },
       () => setStreamStatus('live'),
-      () => setStreamStatus((prev) => (prev === 'live' ? prev : 'error')),
+      (_error) => setStreamStatus((prev) => (prev === 'live' ? prev : 'error')),
     );
 
     return () => {
@@ -373,7 +373,7 @@ export default function ProjectView() {
                     : 'bg-red-500'
               }`}
             />
-            Live threshold alert stream
+            Live threshold alert stream (WebSocket)
             <span className="font-semibold text-warm-900">
               {streamStatus === 'live'
                 ? '(connected)'

@@ -54,7 +54,7 @@ GreenPulse addresses this gap with project-scoped impact logging and determinist
 - Threshold check after impact creation
 - Persistent alerts table when threshold is exceeded
 - API and UI support for viewing alerts and marking them as read
-- Real-time threshold alert stream delivered to the project page via SSE
+- Real-time threshold alert delivery via WebSocket (with SSE compatibility endpoint)
 
 ## Architectural Intent
 
@@ -88,9 +88,9 @@ Out of scope now:
 
 1. Add organizations and team workspaces.
 2. Introduce RBAC (member/admin roles).
-3. Upgrade SSE alert delivery to multi-channel WebSocket fan-out.
-4. Add audit logs for change traceability.
-5. Integrate cloud provider usage ingestion.
+3. Add audit logs for change traceability.
+4. Integrate cloud provider usage ingestion.
+5. Add scheduled recurring compliance reports.
 
 ## Success Criteria
 

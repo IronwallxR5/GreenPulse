@@ -32,7 +32,7 @@ graph TB
         UC22[Auto-detect impact type]
         UC23[Calculate CO2 via polymorphism]
         UC24[Persist threshold alert]
-        UC27[Receive live threshold alerts]
+        UC27[Receive live threshold alerts (WebSocket/SSE)]
     end
 
     subgraph Planned
@@ -102,7 +102,7 @@ graph TB
 | UC22 | Auto-detect impact type | System | Implemented |
 | UC23 | Calculate CO2 via polymorphism | System | Implemented |
 | UC24 | Persist threshold alert | System | Implemented |
-| UC27 | Receive live threshold alerts | User/System | Implemented |
+| UC27 | Receive live threshold alerts (WebSocket/SSE) | User/System | Implemented |
 | UC25 | Organization and team management | User/Admin | Planned |
 | UC26 | Role-based access control | Admin/System | Planned |
 | UC28 | Audit logs and compliance tools | Admin | Planned |

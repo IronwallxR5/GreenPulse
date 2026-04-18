@@ -12,7 +12,7 @@ The frontend provides:
 - Impact log management with filters/sort/pagination
 - Analytics charts by project and impact type
 - Budget and threshold alert experience
-- Live threshold alert updates via SSE stream
+- Live threshold alert updates via WebSocket (SSE fallback supported)
 - Profile view and session controls
 
 ## Stack
@@ -78,7 +78,8 @@ Protected routes (inside layout):
 - Axios base URL comes from `VITE_API_BASE_URL`.
 - Request interceptor attaches `Authorization: Bearer <token>` when available.
 - Auth token and basic user object are stored in local storage via `AuthContext`.
-- Project view subscribes to `GET /api/projects/:id/alerts/stream` for real-time threshold alerts.
+- Project view subscribes to Socket.IO `threshold-alert` events per project.
+- `GET /api/projects/:id/alerts/stream` remains available as SSE compatibility fallback.
 
 ## Frontend Structure
 

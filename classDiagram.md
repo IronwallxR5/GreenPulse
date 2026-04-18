@@ -164,6 +164,14 @@ classDiagram
         +notifyThresholdExceeded(projectId, totalCO2, budget): PromiseVoid
     }
 
+    class AlertSocketGateway {
+        <<singleton>>
+        +initialize(httpServer): void
+        +emitThresholdAlertToProject(projectId, payload): void
+        -resolveTokenFromHandshake(socket): string_nullable
+        -verifyToken(token): JwtPayload_nullable
+    }
+
     class ReportingService {
         -strategy: IReportStrategy
         -impactRepo: ImpactRepository
@@ -247,6 +255,7 @@ classDiagram
     ImpactService ..> ImpactEvent : factory + polymorphism
 
     NotificationService --> AlertRepository
+    NotificationService --> AlertSocketGateway
     ReportingService --> ProjectRepository
     ReportingService --> ImpactRepository
     ReportingService --> IReportStrategy
@@ -262,10 +271,11 @@ classDiagram
 | Polymorphism | `ImpactEvent` hierarchy | Type-specific emission formulas |
 | Strategy | `ReportingService` + report strategies | Runtime selection of PDF/CSV generation |
 | Observer (lightweight) | `NotificationService` | Threshold notification fan-out + durable alert record |
+| Pub/Sub Gateway | `AlertSocketGateway` + Socket.IO rooms | Project-scoped realtime multi-client alert delivery |
 | Repository | `*.repository.ts` classes | Database abstraction over Prisma |
 
 ## Planned Extensions (Not Implemented Yet)
 
 - Organization and team domain classes
 - Role/permission classes for RBAC
-- Additional notification channels (email/websocket/webhook)
+- Additional notification channels (email/webhook)

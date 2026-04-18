@@ -13,7 +13,7 @@ GreenPulse currently provides:
 - Search, filter, sort, and pagination for impact logs
 - Per-project summary and cross-project analytics dashboards
 - Carbon budget thresholds with persisted alert records
-- Real-time threshold alerts stream (SSE) in Project View
+- Real-time threshold alerts in Project View (WebSocket with SSE fallback)
 - PDF and CSV report export
 
 ## Tech Stack
@@ -25,6 +25,7 @@ GreenPulse currently provides:
 - JWT auth (`jsonwebtoken`) + password hashing (`bcryptjs`)
 - Google OAuth (`passport`, `passport-google-oauth20`)
 - Request validation with Zod
+- Socket.IO for authenticated alert fan-out
 - PDF generation with PDFKit
 
 ### Frontend
@@ -211,8 +212,16 @@ Authorization: Bearer <token>
 | `GET` | `/api/projects/:id/report?format=pdf|csv` | Download report |
 | `PUT` | `/api/projects/:id/budget` | Set or clear carbon budget |
 | `GET` | `/api/projects/:id/alerts` | List threshold alerts |
-| `GET` | `/api/projects/:id/alerts/stream` | Subscribe to live threshold alerts (SSE) |
+| `GET` | `/api/projects/:id/alerts/stream` | Subscribe to live threshold alerts (SSE fallback) |
 | `PATCH` | `/api/projects/:id/alerts/read` | Mark alerts read |
+
+### Realtime Channel
+
+Socket.IO connection:
+
+- Connect to backend URL with JWT token in `auth.token`.
+- Emit `subscribe-project` with `{ projectId }`.
+- Receive `threshold-alert` events when project budget is exceeded.
 
 ### Impact Routes
 
@@ -266,6 +275,6 @@ Planned next milestones:
 
 - Organization and team-level multi-tenancy
 - RBAC with role-scoped permissions
-- WebSocket-based alert fan-out for multi-client sync
 - Audit logging for compliance reporting
 - Cloud provider ingestion adapters
+- Automated recurring compliance reports

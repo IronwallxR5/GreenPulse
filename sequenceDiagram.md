@@ -6,6 +6,7 @@
 sequenceDiagram
     actor U as User/API Client
     participant SC as Stream Client (EventSource)
+    participant WS as WebSocket Client
     participant R as Express Router
     participant AM as Auth Middleware
     participant VM as Validation Middleware
@@ -15,6 +16,7 @@ sequenceDiagram
     participant F as ImpactEvent Factory
     participant IR as ImpactRepository
     participant NS as NotificationService
+    participant AG as AlertSocketGateway
     participant AR as AlertRepository
     participant DB as PostgreSQL (Prisma)
 
@@ -22,6 +24,10 @@ sequenceDiagram
     R->>AM: verify JWT (header or query token)
     AM-->>R: userId attached
     R-->>SC: event: connected
+
+    U->>WS: connect Socket.IO with JWT
+    WS->>AG: subscribe-project {projectId}
+    AG-->>WS: subscribed
 
     U->>R: POST /api/projects/:projectId/impacts
     R->>AM: verify JWT
@@ -65,6 +71,8 @@ sequenceDiagram
             NS->>AR: create alert
             AR->>DB: INSERT alerts
             DB-->>AR: alert row
+            NS->>AG: emitThresholdAlertToProject(payload)
+            AG-->>WS: threshold-alert {projectId, totalCO2, budget, message}
             NS-->>SC: event: alert {projectId, totalCO2, budget, message}
         end
     end

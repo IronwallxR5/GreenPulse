@@ -1,4 +1,5 @@
 import api from './api';
+import { io } from 'socket.io-client';
 
 export interface Project {
   id: number;
@@ -39,6 +40,11 @@ export interface ProjectAlertStreamEvent {
   budget: number;
   message: string;
   timestamp: string;
+}
+
+interface ProjectAlertSocketAck {
+  ok: boolean;
+  message?: string;
 }
 
 const getBackendBaseUrl = () => {
@@ -148,6 +154,56 @@ export const projectService = {
 
     return () => {
       source.close();
+    };
+  },
+
+  streamAlertsSocket(
+    id: number,
+    onAlert: (event: ProjectAlertStreamEvent) => void,
+    onConnected?: () => void,
+    onError?: (error: unknown) => void,
+  ): () => void {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return () => undefined;
+    }
+
+    const baseUrl = getBackendBaseUrl();
+    const socket = io(baseUrl, {
+      auth: { token },
+      transports: ['websocket', 'polling'],
+    });
+
+    socket.on('connect', () => {
+      socket.emit('subscribe-project', { projectId: id }, (ack: ProjectAlertSocketAck) => {
+        if (ack?.ok) {
+          onConnected?.();
+          return;
+        }
+
+        onError?.(ack?.message || 'Failed to subscribe project alerts');
+      });
+    });
+
+    socket.on('connected', () => {
+      onConnected?.();
+    });
+
+    socket.on('threshold-alert', (event: ProjectAlertStreamEvent) => {
+      onAlert(event);
+    });
+
+    socket.on('connect_error', (error) => {
+      onError?.(error);
+    });
+
+    socket.on('error', (error) => {
+      onError?.(error);
+    });
+
+    return () => {
+      socket.emit('unsubscribe-project', { projectId: id });
+      socket.disconnect();
     };
   },
 };

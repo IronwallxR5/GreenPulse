@@ -1,4 +1,5 @@
 import AlertRepository from '../../repositories/alert.repository';
+import { emitThresholdAlertToProject } from '../../realtime/alertSocket.gateway';
 
 /**
  * NotificationService — Observer Pattern implementation.
@@ -49,9 +50,19 @@ export class NotificationService {
     const message =
       `Carbon budget exceeded for project #${projectId}. ` +
       `Total CO₂: ${totalCO2.toFixed(4)} kg — Budget: ${budget.toFixed(4)} kg.`;
+    const payload = {
+      projectId,
+      totalCO2,
+      budget,
+      message,
+      timestamp: new Date().toISOString(),
+    };
 
     // Persist the alert
     await this.alertRepo.create({ projectId, message, totalCO2, budget });
+
+    // Fan out to websocket subscribers per project room
+    emitThresholdAlertToProject(payload);
 
     // Fan out to observers
     for (const observer of this.observers) {
