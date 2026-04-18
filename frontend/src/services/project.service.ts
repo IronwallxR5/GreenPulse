@@ -33,6 +33,19 @@ export interface ProjectAlert {
   createdAt: string;
 }
 
+export interface ProjectAlertStreamEvent {
+  projectId: number;
+  totalCO2: number;
+  budget: number;
+  message: string;
+  timestamp: string;
+}
+
+const getBackendBaseUrl = () => {
+  const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+  return apiBase.replace(/\/api\/?$/, '');
+};
+
 export const projectService = {
   async getAll(): Promise<Project[]> {
     const res = await api.get('/projects');
@@ -99,5 +112,42 @@ export const projectService = {
 
   async markAlertsRead(id: number): Promise<void> {
     await api.patch(`/projects/${id}/alerts/read`);
+  },
+
+  streamAlerts(
+    id: number,
+    onAlert: (event: ProjectAlertStreamEvent) => void,
+    onConnected?: () => void,
+    onError?: (event: Event) => void,
+  ): () => void {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      return () => undefined;
+    }
+
+    const baseUrl = getBackendBaseUrl();
+    const streamUrl = `${baseUrl}/api/projects/${id}/alerts/stream?token=${encodeURIComponent(token)}`;
+    const source = new EventSource(streamUrl);
+
+    source.addEventListener('connected', () => {
+      onConnected?.();
+    });
+
+    source.addEventListener('alert', (event) => {
+      try {
+        const parsed = JSON.parse((event as MessageEvent<string>).data) as ProjectAlertStreamEvent;
+        onAlert(parsed);
+      } catch (error) {
+        console.error('[projectService.streamAlerts] Failed to parse stream event', error);
+      }
+    });
+
+    source.onerror = (event) => {
+      onError?.(event);
+    };
+
+    return () => {
+      source.close();
+    };
   },
 };

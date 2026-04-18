@@ -3,15 +3,18 @@ import ProjectService from '../services/project.service';
 import { ReportingService } from '../services/reporting/ReportingService';
 import { PdfReportStrategy } from '../services/reporting/PdfReportStrategy';
 import { CsvReportStrategy } from '../services/reporting/CsvReportStrategy';
+import { NotificationService } from '../services/notifications/NotificationService';
 import { StatusCodes } from 'http-status-codes';
 
 class ProjectController {
   private projectService: ProjectService;
   private reportingService: ReportingService;
+  private notificationService: NotificationService;
 
   constructor() {
     this.projectService = new ProjectService();
     this.reportingService = new ReportingService();
+    this.notificationService = NotificationService.getInstance();
   }
 
   createProject = async (req: Request, res: Response): Promise<void> => {
@@ -160,6 +163,64 @@ class ProjectController {
       res.status(StatusCodes.OK).json({ message: 'All alerts marked as read' });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to mark alerts';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  streamAlerts = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+
+      await this.projectService.getProjectById(id, userId);
+
+      res.setHeader('Content-Type', 'text/event-stream');
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Connection', 'keep-alive');
+      res.setHeader('X-Accel-Buffering', 'no');
+      res.flushHeaders();
+
+      res.write(`event: connected\ndata: ${JSON.stringify({ projectId: id, timestamp: new Date().toISOString() })}\n\n`);
+
+      const observer = (projectId: number, totalCO2: number, budget: number) => {
+        if (projectId !== id) {
+          return;
+        }
+
+        const payload = {
+          projectId,
+          totalCO2,
+          budget,
+          message: `Carbon budget exceeded. Total CO2 ${totalCO2.toFixed(4)} kg vs budget ${budget.toFixed(4)} kg.`,
+          timestamp: new Date().toISOString(),
+        };
+
+        res.write(`event: alert\ndata: ${JSON.stringify(payload)}\n\n`);
+      };
+
+      this.notificationService.subscribe(observer);
+
+      const heartbeat = setInterval(() => {
+        res.write(`: keepalive ${Date.now()}\n\n`);
+      }, 25000);
+
+      let closed = false;
+      const cleanup = () => {
+        if (closed) {
+          return;
+        }
+        closed = true;
+        clearInterval(heartbeat);
+        this.notificationService.unsubscribe(observer);
+        res.end();
+      };
+
+      req.on('close', cleanup);
+      req.on('end', cleanup);
+      res.on('close', cleanup);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to stream alerts';
       const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
       res.status(status).json({ message });
     }

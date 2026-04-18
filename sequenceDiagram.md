@@ -5,6 +5,7 @@
 ```mermaid
 sequenceDiagram
     actor U as User/API Client
+    participant SC as Stream Client (EventSource)
     participant R as Express Router
     participant AM as Auth Middleware
     participant VM as Validation Middleware
@@ -16,6 +17,11 @@ sequenceDiagram
     participant NS as NotificationService
     participant AR as AlertRepository
     participant DB as PostgreSQL (Prisma)
+
+    U->>R: GET /api/projects/:id/alerts/stream?token=...
+    R->>AM: verify JWT (header or query token)
+    AM-->>R: userId attached
+    R-->>SC: event: connected
 
     U->>R: POST /api/projects/:projectId/impacts
     R->>AM: verify JWT
@@ -59,6 +65,7 @@ sequenceDiagram
             NS->>AR: create alert
             AR->>DB: INSERT alerts
             DB-->>AR: alert row
+            NS-->>SC: event: alert {projectId, totalCO2, budget, message}
         end
     end
 

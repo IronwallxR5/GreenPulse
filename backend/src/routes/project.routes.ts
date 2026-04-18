@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { Routes } from '../utils/interfaces';
 import ProjectController from '../controllers/project.controller';
-import { authenticateToken } from '../middleware/auth.middleware';
+import { authenticateToken, authenticateTokenAllowQuery } from '../middleware/auth.middleware';
 import { validateProjectCreate, validateProjectUpdate } from '../middleware/validation.middleware';
 
 class ProjectRoutes implements Routes {
@@ -34,6 +34,12 @@ class ProjectRoutes implements Routes {
     this.router.put(`${this.path}/:id/budget`, authenticateToken, this.projectController.setBudget);
 
     this.router.get(`${this.path}/:id/alerts`, authenticateToken, this.projectController.getAlerts);
+
+    this.router.get(
+      `${this.path}/:id/alerts/stream`,
+      authenticateTokenAllowQuery,
+      this.projectController.streamAlerts
+    );
 
     this.router.patch(`${this.path}/:id/alerts/read`, authenticateToken, this.projectController.markAlertsRead);
 

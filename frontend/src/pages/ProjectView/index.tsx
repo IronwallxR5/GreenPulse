@@ -1,8 +1,8 @@
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { projectService } from '../../services/project.service';
-import type { ProjectAlert } from '../../services/project.service';
+import type { ProjectAlert, ProjectAlertStreamEvent } from '../../services/project.service';
 import {
   impactService,
   type ImpactLog,
@@ -83,6 +83,8 @@ export default function ProjectView() {
 
   // ── Budget state ────────────────────────────────────────────────────────────
   const [budgetInput, setBudgetInput] = useState('');
+  const [streamStatus, setStreamStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
+  const [liveAlertNotice, setLiveAlertNotice] = useState<string | null>(null);
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: project, isLoading: projectLoading } = useQuery({
@@ -188,6 +190,46 @@ export default function ProjectView() {
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'alerts'] });
     },
   });
+
+  useEffect(() => {
+    if (!Number.isFinite(projectId)) {
+      return;
+    }
+
+    setStreamStatus('connecting');
+
+    const stopStream = projectService.streamAlerts(
+      projectId,
+      (event: ProjectAlertStreamEvent) => {
+        setStreamStatus('live');
+        setLiveAlertNotice(event.message);
+
+        queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
+        queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'summary'] });
+        queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'alerts'] });
+      },
+      () => setStreamStatus('live'),
+      () => setStreamStatus((prev) => (prev === 'live' ? prev : 'error')),
+    );
+
+    return () => {
+      stopStream();
+    };
+  }, [projectId, queryClient]);
+
+  useEffect(() => {
+    if (!liveAlertNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setLiveAlertNotice(null);
+    }, 8000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [liveAlertNotice]);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -319,6 +361,45 @@ export default function ProjectView() {
       </div>
 
       {/* ── Summary Stats ──────────────────────────────────────────────── */}
+      <div className="surface-card reveal-up border-warm-200 bg-white px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-xs font-medium text-warm-700 sm:text-sm">
+            <span
+              className={`h-2.5 w-2.5 rounded-full ${
+                streamStatus === 'live'
+                  ? 'bg-forest-500'
+                  : streamStatus === 'connecting'
+                    ? 'bg-gold-500 animate-pulseSoft'
+                    : 'bg-red-500'
+              }`}
+            />
+            Live threshold alert stream
+            <span className="font-semibold text-warm-900">
+              {streamStatus === 'live'
+                ? '(connected)'
+                : streamStatus === 'connecting'
+                  ? '(connecting)'
+                  : '(reconnecting)'}
+            </span>
+          </div>
+
+          {liveAlertNotice && (
+            <button
+              onClick={() => setLiveAlertNotice(null)}
+              className="text-xs font-medium text-warm-500 hover:text-warm-700"
+            >
+              Dismiss
+            </button>
+          )}
+        </div>
+
+        {liveAlertNotice && (
+          <p className="mt-2 rounded-lg border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {liveAlertNotice}
+          </p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 stagger-group">
         <div className="surface-strong p-5">
           <div className="flex items-center gap-2 mb-3">

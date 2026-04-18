@@ -13,6 +13,7 @@ GreenPulse currently provides:
 - Search, filter, sort, and pagination for impact logs
 - Per-project summary and cross-project analytics dashboards
 - Carbon budget thresholds with persisted alert records
+- Real-time threshold alerts stream (SSE) in Project View
 - PDF and CSV report export
 
 ## Tech Stack
@@ -210,6 +211,7 @@ Authorization: Bearer <token>
 | `GET` | `/api/projects/:id/report?format=pdf|csv` | Download report |
 | `PUT` | `/api/projects/:id/budget` | Set or clear carbon budget |
 | `GET` | `/api/projects/:id/alerts` | List threshold alerts |
+| `GET` | `/api/projects/:id/alerts/stream` | Subscribe to live threshold alerts (SSE) |
 | `PATCH` | `/api/projects/:id/alerts/read` | Mark alerts read |
 
 ### Impact Routes
@@ -264,6 +266,6 @@ Planned next milestones:
 
 - Organization and team-level multi-tenancy
 - RBAC with role-scoped permissions
-- Real-time alert delivery channel (for example WebSocket)
+- WebSocket-based alert fan-out for multi-client sync
 - Audit logging for compliance reporting
 - Cloud provider ingestion adapters

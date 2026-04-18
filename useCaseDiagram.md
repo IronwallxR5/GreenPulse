@@ -32,12 +32,12 @@ graph TB
         UC22[Auto-detect impact type]
         UC23[Calculate CO2 via polymorphism]
         UC24[Persist threshold alert]
+        UC27[Receive live threshold alerts]
     end
 
     subgraph Planned
         UC25[Organization and team management]
         UC26[Role-based access control]
-        UC27[Real-time alert channel]
         UC28[Audit logs and compliance tools]
     end
 
@@ -62,10 +62,12 @@ graph TB
     User --> UC19
     User --> UC20
     User --> UC21
+    User --> UC27
 
     System --> UC22
     System --> UC23
     System --> UC24
+    System --> UC27
 
     UC9 -. triggers .-> UC22
     UC22 -. selects subclass .-> UC23
@@ -100,7 +102,7 @@ graph TB
 | UC22 | Auto-detect impact type | System | Implemented |
 | UC23 | Calculate CO2 via polymorphism | System | Implemented |
 | UC24 | Persist threshold alert | System | Implemented |
+| UC27 | Receive live threshold alerts | User/System | Implemented |
 | UC25 | Organization and team management | User/Admin | Planned |
 | UC26 | Role-based access control | Admin/System | Planned |
-| UC27 | Real-time alert channel | System | Planned |
 | UC28 | Audit logs and compliance tools | Admin | Planned |

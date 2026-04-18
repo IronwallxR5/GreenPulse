@@ -103,6 +103,7 @@ classDiagram
         +getProjectReport(req, res): void
         +setBudget(req, res): void
         +getAlerts(req, res): void
+        +streamAlerts(req, res): void
         +markAlertsRead(req, res): void
     }
 
