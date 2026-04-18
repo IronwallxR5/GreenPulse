@@ -59,12 +59,50 @@ classDiagram
         +createdAt: DateTime
     }
 
+    class ReportSchedule {
+        +id: int
+        +projectId: int_unique
+        +userId: int
+        +frequency: ReportFrequency
+        +format: ReportFormat
+        +isActive: boolean
+        +nextRunAt: DateTime
+        +lastRunAt: DateTime_nullable
+        +createdAt: DateTime
+        +updatedAt: DateTime
+    }
+
+    class ComplianceReport {
+        +id: int
+        +projectId: int
+        +userId: int
+        +scheduleId: int_nullable
+        +format: ReportFormat
+        +totalCO2: float
+        +totalLogs: int
+        +byType: json
+        +generatedAt: DateTime
+    }
+
     class ImpactType {
         <<enumeration>>
         COMPUTE
         STORAGE
         NETWORK
         API_CALL
+    }
+
+    class ReportFrequency {
+        <<enumeration>>
+        DAILY
+        WEEKLY
+        MONTHLY
+    }
+
+    class ReportFormat {
+        <<enumeration>>
+        PDF
+        CSV
     }
 
     class ImpactEvent {
@@ -112,6 +150,11 @@ classDiagram
         +deleteProject(req, res): void
         +getProjectSummary(req, res): void
         +getProjectReport(req, res): void
+        +getReportSchedule(req, res): void
+        +upsertReportSchedule(req, res): void
+        +deleteReportSchedule(req, res): void
+        +getComplianceReports(req, res): void
+        +runComplianceReportNow(req, res): void
         +setBudget(req, res): void
         +getAlerts(req, res): void
         +getAuditLogs(req, res): void
@@ -174,6 +217,20 @@ classDiagram
         -projectRepository: ProjectRepository
         +log(input): AuditLog
         +getProjectAuditLogs(projectId, userId, filters): AuditLogList
+    }
+
+    class ComplianceService {
+        -projectRepository: ProjectRepository
+        -impactRepository: ImpactRepository
+        -reportScheduleRepository: ReportScheduleRepository
+        -complianceReportRepository: ComplianceReportRepository
+        -auditService: AuditService
+        +getReportSchedule(projectId, userId): ReportSchedule_nullable
+        +upsertReportSchedule(projectId, userId, data): ReportSchedule
+        +deleteReportSchedule(projectId, userId): DeleteResult
+        +getComplianceReports(projectId, userId, filters): ComplianceReportList
+        +runComplianceReportNow(projectId, userId, format): ComplianceReport
+        +runDueSchedules(): void
     }
 
     class NotificationService {
@@ -257,11 +314,29 @@ classDiagram
         +findByProjectId(projectId, userId, filters): AuditLogList
     }
 
+    class ReportScheduleRepository {
+        +findByProjectId(projectId): ReportSchedule_nullable
+        +upsertByProject(data): ReportSchedule
+        +deleteByProjectId(projectId): void
+        +findDueSchedules(now, limit): ReportScheduleList
+        +updateRunState(id, nextRunAt, lastRunAt): ReportSchedule
+    }
+
+    class ComplianceReportRepository {
+        +create(data): ComplianceReport
+        +findByProjectId(projectId, filters): ComplianceReportList
+    }
+
     User "1" --> "*" Project : owns
     Project "1" --> "*" ImpactLog : contains
     Project "1" --> "*" Alert : raises
     User "1" --> "*" AuditLog : records
     Project "1" --> "*" AuditLog : scopes
+    Project "1" --> "1" ReportSchedule : schedules
+    User "1" --> "*" ReportSchedule : configures
+    Project "1" --> "*" ComplianceReport : snapshots
+    User "1" --> "*" ComplianceReport : generates
+    ReportSchedule "1" --> "*" ComplianceReport : produces
     ImpactLog --> ImpactType
 
     ImpactEvent <|-- ComputeEvent
@@ -273,6 +348,7 @@ classDiagram
     AuthController --> UserRepository
     ProjectController --> ProjectService
     ProjectController --> ReportingService
+    ProjectController --> ComplianceService
     ImpactController --> ImpactService
 
     AuthService --> UserRepository
@@ -289,6 +365,11 @@ classDiagram
     NotificationService --> AlertSocketGateway
     AuditService --> AuditRepository
     AuditService --> ProjectRepository
+    ComplianceService --> ProjectRepository
+    ComplianceService --> ImpactRepository
+    ComplianceService --> ReportScheduleRepository
+    ComplianceService --> ComplianceReportRepository
+    ComplianceService --> AuditService
     ReportingService --> ProjectRepository
     ReportingService --> ImpactRepository
     ReportingService --> IReportStrategy
@@ -306,6 +387,7 @@ classDiagram
 | Observer (lightweight) | `NotificationService` | Threshold notification fan-out + durable alert record |
 | Pub/Sub Gateway | `AlertSocketGateway` + Socket.IO rooms | Project-scoped realtime multi-client alert delivery |
 | Audit Trail | `AuditService` + `AuditRepository` | Durable traceability for key project/impact mutations |
+| Scheduling | `ComplianceService` + scheduler | Automated recurring compliance snapshots |
 | Repository | `*.repository.ts` classes | Database abstraction over Prisma |
 
 ## Planned Extensions (Not Implemented Yet)

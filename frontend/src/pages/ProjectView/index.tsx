@@ -2,7 +2,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { projectService } from '../../services/project.service';
-import type { ProjectAlert, ProjectAlertStreamEvent, ProjectAuditLog } from '../../services/project.service';
+import type {
+  ProjectAlert,
+  ProjectAlertStreamEvent,
+  ProjectAuditLog,
+  ComplianceReport,
+  ReportFormat,
+  ReportFrequency,
+} from '../../services/project.service';
 import {
   impactService,
   type ImpactLog,
@@ -40,6 +47,9 @@ const SORT_OPTIONS: { value: SortBy; label: string }[] = [
   { value: 'name',        label: 'Name' },
 ];
 
+const REPORT_FREQUENCIES: ReportFrequency[] = ['DAILY', 'WEEKLY', 'MONTHLY'];
+const REPORT_FORMATS: ReportFormat[] = ['PDF', 'CSV'];
+
 const getCarbonIntensity = (score: number) => {
   if (score < 0.01) return { label: 'Very Low', color: 'text-green-600' };
   if (score < 0.1)  return { label: 'Low',      color: 'text-green-500' };
@@ -65,6 +75,16 @@ const summarizeAuditMetadata = (metadata: Record<string, unknown> | null) => {
     .join(' | ');
 
   return summary || null;
+};
+
+const toLocalDateTimeInput = (iso: string) => {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  const tzOffsetMs = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16);
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -105,6 +125,10 @@ export default function ProjectView() {
   const [budgetInput, setBudgetInput] = useState('');
   const [streamStatus, setStreamStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
   const [liveAlertNotice, setLiveAlertNotice] = useState<string | null>(null);
+  const [scheduleFrequency, setScheduleFrequency] = useState<ReportFrequency>('WEEKLY');
+  const [scheduleFormat, setScheduleFormat] = useState<ReportFormat>('PDF');
+  const [scheduleStartsAt, setScheduleStartsAt] = useState('');
+  const [scheduleNotice, setScheduleNotice] = useState<string | null>(null);
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: project, isLoading: projectLoading } = useQuery({
@@ -127,8 +151,19 @@ export default function ProjectView() {
     queryFn: () => projectService.getAuditLogs(projectId, { limit: 8 }),
   });
 
+  const { data: reportSchedule } = useQuery({
+    queryKey: ['projects', projectId, 'report-schedule'],
+    queryFn: () => projectService.getReportSchedule(projectId),
+  });
+
+  const { data: complianceReportsData } = useQuery({
+    queryKey: ['projects', projectId, 'compliance-reports'],
+    queryFn: () => projectService.getComplianceReports(projectId, { limit: 6 }),
+  });
+
   const unreadCount = alerts.filter((a: ProjectAlert) => !a.isRead).length;
   const auditLogs = auditLogsData?.data ?? [];
+  const complianceReports = complianceReportsData?.data ?? [];
 
   // ✅ All filter params are in the query key → auto-refetches on any change
   const { data: impactsData, isLoading: impactsLoading, isFetching } = useQuery({
@@ -217,6 +252,43 @@ export default function ProjectView() {
     },
   });
 
+  const upsertReportScheduleMutation = useMutation({
+    mutationFn: (payload: { frequency: ReportFrequency; format: ReportFormat; startsAt?: string }) =>
+      projectService.upsertReportSchedule(projectId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'report-schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'audit-logs'] });
+      setScheduleNotice('Recurring report schedule saved.');
+    },
+    onError: (err: any) => {
+      setScheduleNotice(err.response?.data?.message || 'Failed to save report schedule');
+    },
+  });
+
+  const deleteReportScheduleMutation = useMutation({
+    mutationFn: () => projectService.deleteReportSchedule(projectId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'report-schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'audit-logs'] });
+      setScheduleNotice('Recurring report schedule removed.');
+    },
+    onError: (err: any) => {
+      setScheduleNotice(err.response?.data?.message || 'Failed to remove report schedule');
+    },
+  });
+
+  const runComplianceNowMutation = useMutation({
+    mutationFn: () => projectService.runComplianceReportNow(projectId, { format: scheduleFormat }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'compliance-reports'] });
+      queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'audit-logs'] });
+      setScheduleNotice('Compliance report generated successfully.');
+    },
+    onError: (err: any) => {
+      setScheduleNotice(err.response?.data?.message || 'Failed to generate compliance report');
+    },
+  });
+
   useEffect(() => {
     if (!Number.isFinite(projectId)) {
       return;
@@ -257,6 +329,50 @@ export default function ProjectView() {
       window.clearTimeout(timer);
     };
   }, [liveAlertNotice]);
+
+  useEffect(() => {
+    if (!reportSchedule) {
+      return;
+    }
+
+    setScheduleFrequency(reportSchedule.frequency);
+    setScheduleFormat(reportSchedule.format);
+    setScheduleStartsAt(toLocalDateTimeInput(reportSchedule.nextRunAt));
+  }, [reportSchedule]);
+
+  useEffect(() => {
+    if (!scheduleNotice) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setScheduleNotice(null);
+    }, 5000);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [scheduleNotice]);
+
+  const handleSaveReportSchedule = () => {
+    let startsAtIso: string | undefined;
+
+    if (scheduleStartsAt.trim()) {
+      const parsed = new Date(scheduleStartsAt);
+      if (Number.isNaN(parsed.getTime())) {
+        setScheduleNotice('Please provide a valid start datetime');
+        return;
+      }
+
+      startsAtIso = parsed.toISOString();
+    }
+
+    upsertReportScheduleMutation.mutate({
+      frequency: scheduleFrequency,
+      format: scheduleFormat,
+      startsAt: startsAtIso,
+    });
+  };
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -563,6 +679,139 @@ export default function ProjectView() {
             </p>
           </div>
         )}
+      </div>
+
+      {/* ── Recurring Compliance Reports ────────────────────────────────── */}
+      <div className="surface-card reveal-up stagger-2 p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h3 className="font-display text-sm font-semibold text-warm-900">Recurring Compliance Reports</h3>
+            <p className="mt-1 text-xs text-warm-500">
+              Schedule automated report snapshots and review recent compliance history.
+            </p>
+          </div>
+
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+              reportSchedule?.isActive
+                ? 'bg-forest-100 text-forest-700'
+                : 'bg-warm-100 text-warm-600'
+            }`}
+          >
+            {reportSchedule?.isActive ? 'Active schedule' : 'No active schedule'}
+          </span>
+        </div>
+
+        {reportSchedule && (
+          <div className="mt-3 rounded-lg border border-warm-100 bg-warm-50 p-3 text-xs text-warm-600">
+            <p>
+              Current: {reportSchedule.frequency} / {reportSchedule.format}
+            </p>
+            <p className="mt-1">Next run: {new Date(reportSchedule.nextRunAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+            {reportSchedule.lastRunAt && (
+              <p className="mt-1">Last run: {new Date(reportSchedule.lastRunAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</p>
+            )}
+          </div>
+        )}
+
+        <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div>
+            <Label className="text-xs font-semibold uppercase tracking-[0.14em] text-warm-700">Frequency</Label>
+            <select
+              value={scheduleFrequency}
+              onChange={(e) => setScheduleFrequency(e.target.value as ReportFrequency)}
+              className="mt-1 h-10 w-full rounded-lg border border-warm-200 bg-white px-3 text-sm text-warm-800 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700"
+            >
+              {REPORT_FREQUENCIES.map((frequency) => (
+                <option key={frequency} value={frequency}>{frequency}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="text-xs font-semibold uppercase tracking-[0.14em] text-warm-700">Format</Label>
+            <select
+              value={scheduleFormat}
+              onChange={(e) => setScheduleFormat(e.target.value as ReportFormat)}
+              className="mt-1 h-10 w-full rounded-lg border border-warm-200 bg-white px-3 text-sm text-warm-800 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700"
+            >
+              {REPORT_FORMATS.map((format) => (
+                <option key={format} value={format}>{format}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <Label className="text-xs font-semibold uppercase tracking-[0.14em] text-warm-700">Start At (optional)</Label>
+            <Input
+              type="datetime-local"
+              value={scheduleStartsAt}
+              onChange={(e) => setScheduleStartsAt(e.target.value)}
+              className="mt-1 h-10 border-warm-200 bg-white text-sm focus-visible:ring-forest-700"
+            />
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            onClick={handleSaveReportSchedule}
+            disabled={upsertReportScheduleMutation.isPending}
+            className="h-10 rounded-xl bg-forest-900 px-4 text-sm text-warm-50 hover:bg-forest-800"
+          >
+            {upsertReportScheduleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save Schedule'}
+          </Button>
+
+          <Button
+            onClick={() => runComplianceNowMutation.mutate()}
+            disabled={runComplianceNowMutation.isPending}
+            className="h-10 rounded-xl border border-forest-200 bg-white px-4 text-sm text-forest-700 hover:bg-forest-50"
+          >
+            {runComplianceNowMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Run Now'}
+          </Button>
+
+          {reportSchedule && (
+            <Button
+              onClick={() => deleteReportScheduleMutation.mutate()}
+              disabled={deleteReportScheduleMutation.isPending}
+              className="h-10 rounded-xl border border-red-200 bg-white px-4 text-sm text-red-600 hover:bg-red-50"
+            >
+              {deleteReportScheduleMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete Schedule'}
+            </Button>
+          )}
+        </div>
+
+        {scheduleNotice && (
+          <p className="mt-3 rounded-lg border border-warm-100 bg-warm-50 px-3 py-2 text-sm text-warm-700">
+            {scheduleNotice}
+          </p>
+        )}
+
+        <div className="mt-4 border-t border-warm-100 pt-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-warm-800">Recent Compliance Snapshots</h4>
+            <span className="text-xs text-warm-500">{complianceReportsData?.pagination.total ?? 0} total</span>
+          </div>
+
+          {complianceReports.length === 0 ? (
+            <p className="text-sm text-warm-500">No compliance reports generated yet.</p>
+          ) : (
+            <div className="space-y-2">
+              {complianceReports.map((report: ComplianceReport) => (
+                <div key={report.id} className="rounded-lg border border-warm-100 bg-white px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-warm-800">{report.format} snapshot</p>
+                    <p className="text-xs text-warm-500">
+                      {new Date(report.generatedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs text-warm-600">
+                    Total CO2: {report.totalCO2.toFixed(4)} kg | Total events: {report.totalLogs}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Alerts Panel ─────────────────────────────────────────────────── */}

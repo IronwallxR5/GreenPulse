@@ -30,6 +30,16 @@ class ProjectRoutes implements Routes {
 
     this.router.get(`${this.path}/:id/report`, authenticateToken, this.projectController.getProjectReport);
 
+    this.router.get(`${this.path}/:id/report-schedule`, authenticateToken, this.projectController.getReportSchedule);
+
+    this.router.put(`${this.path}/:id/report-schedule`, authenticateToken, this.projectController.upsertReportSchedule);
+
+    this.router.delete(`${this.path}/:id/report-schedule`, authenticateToken, this.projectController.deleteReportSchedule);
+
+    this.router.get(`${this.path}/:id/compliance-reports`, authenticateToken, this.projectController.getComplianceReports);
+
+    this.router.post(`${this.path}/:id/compliance-reports/run-now`, authenticateToken, this.projectController.runComplianceReportNow);
+
     // ── Carbon threshold budget & alerts ─────────────────────────────────────
     this.router.put(`${this.path}/:id/budget`, authenticateToken, this.projectController.setBudget);
 

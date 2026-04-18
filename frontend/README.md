@@ -14,6 +14,7 @@ The frontend provides:
 - Budget and threshold alert experience
 - Live threshold alert updates via WebSocket (SSE fallback supported)
 - Project-level audit trail panel for change history
+- Recurring compliance report schedule controls and snapshot history
 - Profile view and session controls
 
 ## Stack

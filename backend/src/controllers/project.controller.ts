@@ -4,17 +4,21 @@ import { ReportingService } from '../services/reporting/ReportingService';
 import { PdfReportStrategy } from '../services/reporting/PdfReportStrategy';
 import { CsvReportStrategy } from '../services/reporting/CsvReportStrategy';
 import { NotificationService } from '../services/notifications/NotificationService';
+import ComplianceService from '../services/compliance.service';
+import { ReportFormat, ReportFrequency } from '@prisma/client';
 import { StatusCodes } from 'http-status-codes';
 
 class ProjectController {
   private projectService: ProjectService;
   private reportingService: ReportingService;
   private notificationService: NotificationService;
+  private complianceService: ComplianceService;
 
   constructor() {
     this.projectService = new ProjectService();
     this.reportingService = new ReportingService();
     this.notificationService = NotificationService.getInstance();
+    this.complianceService = new ComplianceService();
   }
 
   createProject = async (req: Request, res: Response): Promise<void> => {
@@ -117,6 +121,114 @@ class ProjectController {
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to generate report';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  getReportSchedule = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      const schedule = await this.complianceService.getReportSchedule(id, userId);
+      res.status(StatusCodes.OK).json(schedule);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get report schedule';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  upsertReportSchedule = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+
+      const frequencyRaw = String(req.body.frequency || '').toUpperCase();
+      const formatRaw = String(req.body.format || '').toUpperCase();
+
+      if (!Object.values(ReportFrequency).includes(frequencyRaw as ReportFrequency)) {
+        res.status(StatusCodes.BAD_REQUEST).json({ message: 'frequency must be DAILY, WEEKLY, or MONTHLY' });
+        return;
+      }
+
+      if (!Object.values(ReportFormat).includes(formatRaw as ReportFormat)) {
+        res.status(StatusCodes.BAD_REQUEST).json({ message: 'format must be PDF or CSV' });
+        return;
+      }
+
+      const isActive = req.body.isActive === undefined ? undefined : Boolean(req.body.isActive);
+      const startsAt = req.body.startsAt ? String(req.body.startsAt) : undefined;
+
+      const schedule = await this.complianceService.upsertReportSchedule(id, userId, {
+        frequency: frequencyRaw as ReportFrequency,
+        format: formatRaw as ReportFormat,
+        isActive,
+        startsAt,
+      });
+
+      res.status(StatusCodes.OK).json(schedule);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to set report schedule';
+      const status = message === 'Project not found'
+        ? StatusCodes.NOT_FOUND
+        : message === 'Invalid startsAt datetime'
+          ? StatusCodes.BAD_REQUEST
+          : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  deleteReportSchedule = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      const result = await this.complianceService.deleteReportSchedule(id, userId);
+      res.status(StatusCodes.OK).json({
+        message: result.deleted ? 'Report schedule deleted successfully' : 'No report schedule configured',
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to delete report schedule';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  getComplianceReports = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      const page = req.query.page ? parseInt(String(req.query.page)) : undefined;
+      const limit = req.query.limit ? parseInt(String(req.query.limit)) : undefined;
+
+      const reports = await this.complianceService.getComplianceReports(id, userId, { page, limit });
+      res.status(StatusCodes.OK).json(reports);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get compliance reports';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  runComplianceReportNow = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      const formatRaw = req.body.format ? String(req.body.format).toUpperCase() : undefined;
+
+      if (formatRaw && !Object.values(ReportFormat).includes(formatRaw as ReportFormat)) {
+        res.status(StatusCodes.BAD_REQUEST).json({ message: 'format must be PDF or CSV' });
+        return;
+      }
+
+      const report = await this.complianceService.runComplianceReportNow(
+        id,
+        userId,
+        formatRaw as ReportFormat | undefined,
+      );
+      res.status(StatusCodes.CREATED).json(report);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to run compliance report';
       const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
       res.status(status).json({ message });
     }

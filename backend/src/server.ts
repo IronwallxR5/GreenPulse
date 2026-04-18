@@ -5,6 +5,7 @@ import AuthRoutes from './routes/auth.routes';
 import ProjectRoutes from './routes/project.routes';
 import ImpactRoutes from './routes/impact.routes';
 import { initializeAlertSocketGateway } from './realtime/alertSocket.gateway';
+import { startComplianceScheduler } from './services/reporting/complianceScheduler';
 
 const app = new App([
   new AuthRoutes(),
@@ -14,6 +15,7 @@ const app = new App([
 
 const httpServer = createServer(app.app);
 initializeAlertSocketGateway(httpServer);
+startComplianceScheduler();
 
 httpServer.listen(app.port, () => {
   console.log(`Server running on http://localhost:${app.port}`);

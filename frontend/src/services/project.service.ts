@@ -63,6 +63,44 @@ export interface ProjectAuditLogList {
   };
 }
 
+export type ReportFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY';
+export type ReportFormat = 'PDF' | 'CSV';
+
+export interface ProjectReportSchedule {
+  id: number;
+  projectId: number;
+  userId: number;
+  frequency: ReportFrequency;
+  format: ReportFormat;
+  isActive: boolean;
+  nextRunAt: string;
+  lastRunAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ComplianceReport {
+  id: number;
+  projectId: number;
+  userId: number;
+  scheduleId: number | null;
+  format: ReportFormat;
+  totalCO2: number;
+  totalLogs: number;
+  byType: Array<{ type: string; totalCO2: number; count: number }>;
+  generatedAt: string;
+}
+
+export interface ComplianceReportList {
+  data: ComplianceReport[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 interface ProjectAlertSocketAck {
   ok: boolean;
   message?: string;
@@ -145,6 +183,34 @@ export const projectService = {
     const res = await api.get(`/projects/${id}/audit-logs`, {
       params,
     });
+    return res.data;
+  },
+
+  async getReportSchedule(id: number): Promise<ProjectReportSchedule | null> {
+    const res = await api.get(`/projects/${id}/report-schedule`);
+    return res.data;
+  },
+
+  async upsertReportSchedule(
+    id: number,
+    payload: { frequency: ReportFrequency; format: ReportFormat; isActive?: boolean; startsAt?: string }
+  ): Promise<ProjectReportSchedule> {
+    const res = await api.put(`/projects/${id}/report-schedule`, payload);
+    return res.data;
+  },
+
+  async deleteReportSchedule(id: number): Promise<{ message: string }> {
+    const res = await api.delete(`/projects/${id}/report-schedule`);
+    return res.data;
+  },
+
+  async getComplianceReports(id: number, params?: { page?: number; limit?: number }): Promise<ComplianceReportList> {
+    const res = await api.get(`/projects/${id}/compliance-reports`, { params });
+    return res.data;
+  },
+
+  async runComplianceReportNow(id: number, payload?: { format?: ReportFormat }): Promise<ComplianceReport> {
+    const res = await api.post(`/projects/${id}/compliance-reports/run-now`, payload || {});
     return res.data;
   },
 

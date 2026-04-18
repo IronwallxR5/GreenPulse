@@ -15,6 +15,7 @@ GreenPulse currently provides:
 - Carbon budget thresholds with persisted alert records
 - Real-time threshold alerts in Project View (WebSocket with SSE fallback)
 - Project-level audit trail for compliance and change traceability
+- Automated recurring compliance report snapshots with schedule controls
 - PDF and CSV report export
 
 ## Tech Stack
@@ -79,8 +80,10 @@ GreenPulse/
       repositories/
         audit.repository.ts
         alert.repository.ts
+        complianceReport.repository.ts
         impact.repository.ts
         project.repository.ts
+        reportSchedule.repository.ts
         user.repository.ts
       realtime/
         alertSocket.gateway.ts
@@ -91,11 +94,13 @@ GreenPulse/
       services/
         audit.service.ts
         auth.service.ts
+        compliance.service.ts
         impact.service.ts
         project.service.ts
         notifications/
           NotificationService.ts
         reporting/
+          complianceScheduler.ts
           CsvReportStrategy.ts
           IReportStrategy.ts
           PdfReportStrategy.ts
@@ -215,6 +220,11 @@ Authorization: Bearer <token>
 | `DELETE` | `/api/projects/:id` | Delete project |
 | `GET` | `/api/projects/:id/summary` | Aggregate project emissions |
 | `GET` | `/api/projects/:id/report?format=pdf|csv` | Download report |
+| `GET` | `/api/projects/:id/report-schedule` | Get recurring report schedule |
+| `PUT` | `/api/projects/:id/report-schedule` | Create or update recurring report schedule |
+| `DELETE` | `/api/projects/:id/report-schedule` | Delete recurring report schedule |
+| `GET` | `/api/projects/:id/compliance-reports` | List generated compliance report snapshots |
+| `POST` | `/api/projects/:id/compliance-reports/run-now` | Generate a compliance snapshot immediately |
 | `PUT` | `/api/projects/:id/budget` | Set or clear carbon budget |
 | `GET` | `/api/projects/:id/alerts` | List threshold alerts |
 | `GET` | `/api/projects/:id/audit-logs` | List project audit log entries |
@@ -264,7 +274,10 @@ Supported impact list query params:
 - `Project` has many `ImpactLog`
 - `Project` has many `Alert`
 - `Project` has many `AuditLog`
+- `Project` has one `ReportSchedule`
+- `Project` has many `ComplianceReport`
 - `User` has many `AuditLog`
+- `User` has many `ReportSchedule` and `ComplianceReport`
 - Deleting a project cascades to impact logs and alerts
 
 See `backend/prisma/schema.prisma` for source of truth.
@@ -284,4 +297,4 @@ Planned next milestones:
 - Organization and team-level multi-tenancy
 - RBAC with role-scoped permissions
 - Cloud provider ingestion adapters
-- Automated recurring compliance reports
+- Organization-level audit retention and export controls

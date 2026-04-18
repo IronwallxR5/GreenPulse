@@ -145,3 +145,53 @@ sequenceDiagram
     RS-->>PC: file + contentType + filename
     PC-->>U: attachment response
 ```
+
+## 3) Recurring Compliance Report Schedule and Auto-Generation
+
+```mermaid
+sequenceDiagram
+    actor U as User/API Client
+    participant R as Express Router
+    participant AM as Auth Middleware
+    participant PC as ProjectController
+    participant CS as ComplianceService
+    participant PSR as ReportScheduleRepository
+    participant CRR as ComplianceReportRepository
+    participant IR as ImpactRepository
+    participant AUS as AuditService
+    participant DB as PostgreSQL (Prisma)
+    participant SCH as ComplianceScheduler
+
+    U->>R: PUT /api/projects/:id/report-schedule
+    R->>AM: verify JWT
+    AM-->>R: userId attached
+    R->>PC: upsertReportSchedule(req, res)
+    PC->>CS: upsertReportSchedule(projectId, userId, frequency/format/startsAt)
+    CS->>PSR: upsertByProject(...)
+    PSR->>DB: INSERT/UPDATE report_schedules
+    DB-->>PSR: schedule row
+    CS->>AUS: log(REPORT_SCHEDULE_UPDATED)
+    AUS->>DB: INSERT audit_logs
+    CS-->>PC: schedule
+    PC-->>U: 200 OK
+
+    loop every interval
+        SCH->>CS: runDueSchedules()
+        CS->>PSR: findDueSchedules(now)
+        PSR->>DB: SELECT due report_schedules
+        DB-->>PSR: due schedule rows
+
+        alt due schedule exists
+            CS->>IR: getSummaryByProjectId(projectId)
+            IR->>DB: aggregate impacts
+            DB-->>IR: summary
+            CS->>CRR: create compliance snapshot
+            CRR->>DB: INSERT compliance_reports
+            DB-->>CRR: compliance report row
+            CS->>PSR: updateRunState(nextRunAt, lastRunAt)
+            PSR->>DB: UPDATE report_schedules
+            CS->>AUS: log(COMPLIANCE_REPORT_GENERATED)
+            AUS->>DB: INSERT audit_logs
+        end
+    end
+```

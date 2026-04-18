@@ -34,6 +34,8 @@ graph TB
         UC24[Persist threshold alert]
         UC27[Receive live threshold alerts (WebSocket/SSE)]
         UC28[View project audit trail]
+        UC30[Configure recurring compliance reports]
+        UC31[View generated compliance snapshots]
     end
 
     subgraph Planned
@@ -65,12 +67,16 @@ graph TB
     User --> UC21
     User --> UC27
     User --> UC28
+    User --> UC30
+    User --> UC31
 
     System --> UC22
     System --> UC23
     System --> UC24
     System --> UC27
     System --> UC28
+    System --> UC30
+    System --> UC31
 
     UC9 -. triggers .-> UC22
     UC22 -. selects subclass .-> UC23
@@ -107,6 +113,8 @@ graph TB
 | UC24 | Persist threshold alert | System | Implemented |
 | UC27 | Receive live threshold alerts (WebSocket/SSE) | User/System | Implemented |
 | UC28 | View project audit trail | User/System | Implemented |
+| UC30 | Configure recurring compliance reports | User/System | Implemented |
+| UC31 | View generated compliance snapshots | User/System | Implemented |
 | UC25 | Organization and team management | User/Admin | Planned |
 | UC26 | Role-based access control | Admin/System | Planned |
 | UC29 | Cloud ingestion adapters | System | Planned |

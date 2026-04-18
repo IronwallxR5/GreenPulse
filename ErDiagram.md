@@ -57,11 +57,41 @@ erDiagram
         timestamp created_at
     }
 
+    REPORT_SCHEDULES {
+        int id PK
+        int project_id FK "unique"
+        int user_id FK
+        enum frequency "DAILY | WEEKLY | MONTHLY"
+        enum format "PDF | CSV"
+        boolean is_active
+        timestamp next_run_at
+        timestamp last_run_at "nullable"
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    COMPLIANCE_REPORTS {
+        int id PK
+        int project_id FK
+        int user_id FK
+        int schedule_id FK "nullable"
+        enum format "PDF | CSV"
+        float total_co2
+        int total_logs
+        json by_type
+        timestamp generated_at
+    }
+
     USERS ||--o{ PROJECTS : owns
     PROJECTS ||--o{ IMPACT_LOGS : contains
     PROJECTS ||--o{ ALERTS : raises
     USERS ||--o{ AUDIT_LOGS : records
     PROJECTS ||--o{ AUDIT_LOGS : scopes
+    USERS ||--o{ REPORT_SCHEDULES : configures
+    PROJECTS ||--|| REPORT_SCHEDULES : scheduled_by
+    USERS ||--o{ COMPLIANCE_REPORTS : generates
+    PROJECTS ||--o{ COMPLIANCE_REPORTS : snapshots
+    REPORT_SCHEDULES ||--o{ COMPLIANCE_REPORTS : produces
 ```
 
 ## Table Summary
@@ -73,6 +103,8 @@ erDiagram
 | `impact_logs` | Raw impact events + calculated CO2 | Belongs to one project |
 | `alerts` | Threshold exceedance records | Created when total CO2 crosses budget |
 | `audit_logs` | Compliance trace of key mutations | Links actor user and optional project scope |
+| `report_schedules` | Recurring report configuration per project | One schedule per project |
+| `compliance_reports` | Generated compliance snapshots | Optional link to originating schedule |
 
 ## Key Constraints
 
@@ -83,6 +115,11 @@ erDiagram
 - `alerts.projectId` references `projects.id` with `onDelete: Cascade`.
 - `audit_logs.userId` references `users.id` with `onDelete: Cascade`.
 - `audit_logs.projectId` references `projects.id` with `onDelete: SetNull`.
+- `report_schedules.projectId` references `projects.id` with `onDelete: Cascade` and is unique.
+- `report_schedules.userId` references `users.id` with `onDelete: Cascade`.
+- `compliance_reports.projectId` references `projects.id` with `onDelete: Cascade`.
+- `compliance_reports.userId` references `users.id` with `onDelete: Cascade`.
+- `compliance_reports.scheduleId` references `report_schedules.id` with `onDelete: SetNull`.
 
 ## Key Indexes
 
@@ -92,6 +129,8 @@ erDiagram
 | `impact_logs` | `(projectId)`, `(type)`, `(createdAt)` |
 | `alerts` | `(projectId)`, `(createdAt)` |
 | `audit_logs` | `(userId)`, `(projectId)`, `(createdAt)`, `(action)` |
+| `report_schedules` | `(projectId unique)`, `(userId)`, `(isActive, nextRunAt)` |
+| `compliance_reports` | `(projectId)`, `(scheduleId)`, `(generatedAt)` |
 
 ## Planned Data Model Extensions
 

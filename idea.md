@@ -61,6 +61,8 @@ GreenPulse addresses this gap with project-scoped impact logging and determinist
 - Structured audit log entries for key project and impact mutations
 - Project-level API to review chronological change history
 - Project view panel for recent audit trail visibility
+- Recurring compliance report schedules (daily/weekly/monthly)
+- Automated compliance snapshot generation with history per project
 
 ## Architectural Intent
 
@@ -87,7 +89,6 @@ Out of scope now:
 - Direct ingestion from cloud provider APIs
 - Streaming event ingestion pipeline
 - RBAC and organization-level multi-tenancy
-- Scheduled report jobs
 - Audit-log governance model
 
 ## Roadmap Priorities
@@ -95,8 +96,8 @@ Out of scope now:
 1. Add organizations and team workspaces.
 2. Introduce RBAC (member/admin roles).
 3. Integrate cloud provider usage ingestion.
-4. Add scheduled recurring compliance reports.
-5. Add organization-level audit retention and export controls.
+4. Add organization-level audit retention and export controls.
+5. Add organization-level report distribution channels.
 
 ## Success Criteria
 
