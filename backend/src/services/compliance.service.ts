@@ -33,14 +33,38 @@ class ComplianceService {
     this.auditService = new AuditService();
   }
 
-  private async verifyProjectOwnership(projectId: number, userId: number) {
+  private async verifyProjectAccess(projectId: number, userId: number) {
     const project = await this.projectRepository.findById(projectId);
 
     if (!project) {
       throw new Error('Project not found');
     }
 
-    if (project.userId !== userId) {
+    const hasAccess = project.organizationId
+      ? project.organization?.memberships?.some((membership) => membership.userId === userId)
+      : project.userId === userId;
+
+    if (!hasAccess) {
+      throw new Error('Unauthorized access');
+    }
+
+    return project;
+  }
+
+  private async verifyProjectManageAccess(projectId: number, userId: number) {
+    const project = await this.projectRepository.findById(projectId);
+
+    if (!project) {
+      throw new Error('Project not found');
+    }
+
+    const hasManageAccess = project.organizationId
+      ? project.organization?.memberships?.some(
+          (membership) => membership.userId === userId && membership.role === 'OWNER',
+        )
+      : project.userId === userId;
+
+    if (!hasManageAccess) {
       throw new Error('Unauthorized access');
     }
 
@@ -78,12 +102,12 @@ class ComplianceService {
   }
 
   async getReportSchedule(projectId: number, userId: number) {
-    await this.verifyProjectOwnership(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId);
     return await this.reportScheduleRepository.findByProjectId(projectId);
   }
 
   async upsertReportSchedule(projectId: number, userId: number, data: UpsertReportScheduleInput) {
-    await this.verifyProjectOwnership(projectId, userId);
+    await this.verifyProjectManageAccess(projectId, userId);
 
     const startsAt = this.parseStartsAt(data.startsAt);
     const base = startsAt ?? new Date();
@@ -117,7 +141,7 @@ class ComplianceService {
   }
 
   async deleteReportSchedule(projectId: number, userId: number) {
-    await this.verifyProjectOwnership(projectId, userId);
+    await this.verifyProjectManageAccess(projectId, userId);
 
     const existing = await this.reportScheduleRepository.findByProjectId(projectId);
     if (!existing) {
@@ -142,7 +166,7 @@ class ComplianceService {
   }
 
   async getComplianceReports(projectId: number, userId: number, filters?: ComplianceReportFilters) {
-    await this.verifyProjectOwnership(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId);
     return await this.complianceReportRepository.findByProjectId(projectId, filters);
   }
 
@@ -181,7 +205,7 @@ class ComplianceService {
   }
 
   async runComplianceReportNow(projectId: number, userId: number, format?: ReportFormat) {
-    await this.verifyProjectOwnership(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId);
 
     const schedule = await this.reportScheduleRepository.findByProjectId(projectId);
     const resolvedFormat = format ?? schedule?.format ?? ReportFormat.PDF;

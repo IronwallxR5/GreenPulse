@@ -36,10 +36,10 @@ graph TB
         UC28[View project audit trail]
         UC30[Configure recurring compliance reports]
         UC31[View generated compliance snapshots]
+        UC25[Organization and team management]
     end
 
     subgraph Planned
-        UC25[Organization and team management]
         UC26[Role-based access control]
         UC29[Cloud ingestion adapters]
     end
@@ -69,6 +69,7 @@ graph TB
     User --> UC28
     User --> UC30
     User --> UC31
+    User --> UC25
 
     System --> UC22
     System --> UC23
@@ -77,6 +78,7 @@ graph TB
     System --> UC28
     System --> UC30
     System --> UC31
+    System --> UC25
 
     UC9 -. triggers .-> UC22
     UC22 -. selects subclass .-> UC23
@@ -115,6 +117,6 @@ graph TB
 | UC28 | View project audit trail | User/System | Implemented |
 | UC30 | Configure recurring compliance reports | User/System | Implemented |
 | UC31 | View generated compliance snapshots | User/System | Implemented |
-| UC25 | Organization and team management | User/Admin | Planned |
+| UC25 | Organization and team management | User/Admin | Implemented |
 | UC26 | Role-based access control | Admin/System | Planned |
 | UC29 | Cloud ingestion adapters | System | Planned |

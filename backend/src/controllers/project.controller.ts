@@ -28,7 +28,8 @@ class ProjectController {
       res.status(StatusCodes.CREATED).json(project);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to create project';
-      res.status(StatusCodes.BAD_REQUEST).json({ message });
+      const status = message === 'Unauthorized organization access' ? StatusCodes.FORBIDDEN : StatusCodes.BAD_REQUEST;
+      res.status(status).json({ message });
     }
   };
 

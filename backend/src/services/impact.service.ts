@@ -34,19 +34,25 @@ class ImpactService {
     this.auditService = new AuditService();
   }
 
-  private async verifyProjectOwnership(projectId: number, userId: number) {
+  private async verifyProjectAccess(projectId: number, userId: number) {
     const project = await this.projectRepository.findById(projectId);
     if (!project) {
       throw new Error('Project not found');
     }
-    if (project.userId !== userId) {
+
+    const hasAccess = project.organizationId
+      ? project.organization?.memberships?.some((membership) => membership.userId === userId)
+      : project.userId === userId;
+
+    if (!hasAccess) {
       throw new Error('Unauthorized access');
     }
+
     return project;
   }
 
   async createImpact(data: CreateImpactDTO, projectId: number, userId: number) {
-    const project = await this.verifyProjectOwnership(projectId, userId);
+    const project = await this.verifyProjectAccess(projectId, userId);
     const carbonScore = this.calculateCO2(data.type, data.unitValue);
 
     const impact = await this.impactRepository.create({
@@ -103,15 +109,13 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    if (impact.project.userId !== userId) {
-      throw new Error('Unauthorized access');
-    }
+    await this.verifyProjectAccess(impact.projectId, userId);
 
     return impact;
   }
 
   async getAllImpacts(projectId: number, userId: number, filters?: GetAllFilters) {
-    await this.verifyProjectOwnership(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId);
     return await this.impactRepository.findByProjectId(projectId, filters);
   }
 
@@ -122,9 +126,7 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    if (existingImpact.project.userId !== userId) {
-      throw new Error('Unauthorized access');
-    }
+    await this.verifyProjectAccess(existingImpact.projectId, userId);
 
     const updateData: any = { ...data };
 
@@ -157,9 +159,7 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    if (impact.project.userId !== userId) {
-      throw new Error('Unauthorized access');
-    }
+    await this.verifyProjectAccess(impact.projectId, userId);
 
     await this.auditService.log({
       userId,
@@ -177,7 +177,7 @@ class ImpactService {
   }
 
   async getSummary(projectId: number, userId: number) {
-    await this.verifyProjectOwnership(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId);
     return await this.impactRepository.getSummaryByProjectId(projectId);
   }
 

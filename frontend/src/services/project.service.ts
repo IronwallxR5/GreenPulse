@@ -6,6 +6,11 @@ export interface Project {
   name: string;
   description: string | null;
   userId: number;
+  organizationId?: number | null;
+  organization?: {
+    id: number;
+    name: string;
+  } | null;
   carbonBudget: number | null;
   createdAt: string;
   updatedAt: string;
@@ -101,6 +106,34 @@ export interface ComplianceReportList {
   };
 }
 
+export type OrganizationRole = 'OWNER' | 'MEMBER';
+
+export interface Organization {
+  id: number;
+  name: string;
+  createdBy: number;
+  createdAt: string;
+  updatedAt: string;
+  memberships?: Array<{ role: OrganizationRole }>;
+  _count?: {
+    memberships: number;
+    projects: number;
+  };
+}
+
+export interface OrganizationMember {
+  id: number;
+  organizationId: number;
+  userId: number;
+  role: OrganizationRole;
+  createdAt: string;
+  user: {
+    id: number;
+    email: string;
+    name: string;
+  };
+}
+
 interface ProjectAlertSocketAck {
   ok: boolean;
   message?: string;
@@ -151,7 +184,7 @@ export const projectService = {
     window.URL.revokeObjectURL(url);
   },
 
-  async create(data: { name: string; description?: string }): Promise<Project> {
+  async create(data: { name: string; description?: string; organizationId?: number }): Promise<Project> {
     const res = await api.post('/projects', data);
     return res.data;
   },
@@ -211,6 +244,34 @@ export const projectService = {
 
   async runComplianceReportNow(id: number, payload?: { format?: ReportFormat }): Promise<ComplianceReport> {
     const res = await api.post(`/projects/${id}/compliance-reports/run-now`, payload || {});
+    return res.data;
+  },
+
+  async getOrganizations(): Promise<Organization[]> {
+    const res = await api.get('/organizations');
+    return res.data;
+  },
+
+  async createOrganization(data: { name: string }): Promise<Organization> {
+    const res = await api.post('/organizations', data);
+    return res.data;
+  },
+
+  async getOrganizationMembers(id: number): Promise<OrganizationMember[]> {
+    const res = await api.get(`/organizations/${id}/members`);
+    return res.data;
+  },
+
+  async addOrganizationMember(
+    id: number,
+    payload: { email: string; role?: OrganizationRole },
+  ): Promise<OrganizationMember> {
+    const res = await api.post(`/organizations/${id}/members`, payload);
+    return res.data;
+  },
+
+  async removeOrganizationMember(id: number, memberUserId: number): Promise<{ message: string }> {
+    const res = await api.delete(`/organizations/${id}/members/${memberUserId}`);
     return res.data;
   },
 

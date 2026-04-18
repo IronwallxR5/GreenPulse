@@ -37,6 +37,7 @@ GreenPulse addresses this gap with project-scoped impact logging and determinist
 ### Carbon Tracking
 
 - Project CRUD with ownership checks
+- Project sharing through organization membership workspaces
 - Impact event CRUD under each project
 - Supported impact types: `COMPUTE`, `STORAGE`, `NETWORK`, `API_CALL`
 - Automatic CO2 calculation using polymorphic event classes
@@ -64,6 +65,13 @@ GreenPulse addresses this gap with project-scoped impact logging and determinist
 - Recurring compliance report schedules (daily/weekly/monthly)
 - Automated compliance snapshot generation with history per project
 
+### Organizations and Teams
+
+- Organization creation for collaborative workspaces
+- Membership model with owner/member roles
+- Team member add/remove management endpoints
+- Shared project visibility for organization members
+
 ## Architectural Intent
 
 GreenPulse intentionally uses OOP and pattern-oriented design where it provides real value:
@@ -88,16 +96,16 @@ Out of scope now:
 
 - Direct ingestion from cloud provider APIs
 - Streaming event ingestion pipeline
-- RBAC and organization-level multi-tenancy
+- RBAC with fine-grained permissions
 - Audit-log governance model
 
 ## Roadmap Priorities
 
-1. Add organizations and team workspaces.
-2. Introduce RBAC (member/admin roles).
-3. Integrate cloud provider usage ingestion.
-4. Add organization-level audit retention and export controls.
-5. Add organization-level report distribution channels.
+1. Introduce RBAC (member/admin roles).
+2. Integrate cloud provider usage ingestion.
+3. Add organization-level audit retention and export controls.
+4. Add organization-level report distribution channels.
+5. Add SSO/SCIM provisioning for enterprise organizations.
 
 ## Success Criteria
 

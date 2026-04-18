@@ -4,11 +4,13 @@ import App from './app';
 import AuthRoutes from './routes/auth.routes';
 import ProjectRoutes from './routes/project.routes';
 import ImpactRoutes from './routes/impact.routes';
+import OrganizationRoutes from './routes/organization.routes';
 import { initializeAlertSocketGateway } from './realtime/alertSocket.gateway';
 import { startComplianceScheduler } from './services/reporting/complianceScheduler';
 
 const app = new App([
   new AuthRoutes(),
+  new OrganizationRoutes(),
   new ProjectRoutes(),
   new ImpactRoutes()
 ]);

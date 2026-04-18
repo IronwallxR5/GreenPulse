@@ -28,7 +28,7 @@ class AuditRepository {
     });
   }
 
-  async findByProjectId(projectId: number, userId: number, filters?: FindProjectAuditLogsFilters) {
+  async findByProjectId(projectId: number, filters?: FindProjectAuditLogsFilters) {
     const {
       action,
       page = 1,
@@ -37,7 +37,6 @@ class AuditRepository {
 
     const where: any = {
       projectId,
-      userId,
     };
 
     if (action) {
@@ -48,6 +47,15 @@ class AuditRepository {
       prisma.auditLog.count({ where }),
       prisma.auditLog.findMany({
         where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,

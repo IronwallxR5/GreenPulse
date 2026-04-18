@@ -36,11 +36,15 @@ class AuditService {
       throw new Error('Project not found');
     }
 
-    if (project.userId !== userId) {
+    const hasAccess = project.organizationId
+      ? project.organization?.memberships?.some((membership) => membership.userId === userId)
+      : project.userId === userId;
+
+    if (!hasAccess) {
       throw new Error('Unauthorized access');
     }
 
-    return await this.auditRepository.findByProjectId(projectId, userId, filters);
+    return await this.auditRepository.findByProjectId(projectId, filters);
   }
 }
 

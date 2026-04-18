@@ -11,15 +11,42 @@ class ProjectRepository {
       where: { id },
       include: {
         _count: { select: { impactLogs: true } },
+        organization: {
+          include: {
+            memberships: {
+              select: {
+                userId: true,
+                role: true,
+              },
+            },
+          },
+        },
       },
     });
   }
 
   async findByUserId(userId: number) {
     return await prisma.project.findMany({
-      where: { userId },
+      where: {
+        OR: [
+          { userId },
+          {
+            organization: {
+              memberships: {
+                some: { userId },
+              },
+            },
+          },
+        ],
+      },
       include: {
         _count: { select: { impactLogs: true } },
+        organization: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });

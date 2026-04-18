@@ -31,6 +31,7 @@ const updateImpactSchema = z.object({
 const createProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required'),
   description: z.string().optional(),
+  organizationId: z.number().int().positive().optional(),
 });
 
 const updateProjectSchema = z.object({

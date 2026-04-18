@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '../../services/project.service';
-import type { Project } from '../../services/project.service';
+import type { Project, Organization } from '../../services/project.service';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, FolderOpen, ArrowRight, Loader2, Leaf, Pencil, Sparkles, Gauge, Layers3 } from 'lucide-react';
+import { Plus, Trash2, FolderOpen, ArrowRight, Loader2, Leaf, Pencil, Sparkles, Gauge, Layers3, Building2, Users } from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
@@ -18,6 +18,12 @@ export default function Dashboard() {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [projectScope, setProjectScope] = useState<'PERSONAL' | 'ORG'>('PERSONAL');
+  const [projectOrganizationId, setProjectOrganizationId] = useState('');
+
+  // ── Organization state ──────────────────────────────────────────────────
+  const [orgOpen, setOrgOpen] = useState(false);
+  const [orgName, setOrgName] = useState('');
 
   // ── Edit project state ───────────────────────────────────────────────────
   const [editOpen, setEditOpen]               = useState(false);
@@ -30,13 +36,29 @@ export default function Dashboard() {
     queryFn: projectService.getAll,
   });
 
+  const { data: organizations = [] } = useQuery<Organization[]>({
+    queryKey: ['organizations'],
+    queryFn: projectService.getOrganizations,
+  });
+
   const createMutation = useMutation({
-    mutationFn: (data: { name: string; description?: string }) => projectService.create(data),
+    mutationFn: (data: { name: string; description?: string; organizationId?: number }) => projectService.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setOpen(false);
       setName('');
       setDescription('');
+      setProjectScope('PERSONAL');
+      setProjectOrganizationId('');
+    },
+  });
+
+  const createOrganizationMutation = useMutation({
+    mutationFn: (data: { name: string }) => projectService.createOrganization(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      setOrgOpen(false);
+      setOrgName('');
     },
   });
 
@@ -60,7 +82,23 @@ export default function Dashboard() {
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    createMutation.mutate({ name: name.trim(), description: description.trim() || undefined });
+
+    const organizationId = projectScope === 'ORG' ? parseInt(projectOrganizationId, 10) : undefined;
+    if (projectScope === 'ORG' && (!projectOrganizationId || Number.isNaN(organizationId))) {
+      return;
+    }
+
+    createMutation.mutate({
+      name: name.trim(),
+      description: description.trim() || undefined,
+      organizationId,
+    });
+  };
+
+  const handleCreateOrganization = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!orgName.trim()) return;
+    createOrganizationMutation.mutate({ name: orgName.trim() });
   };
 
   const openEditDialog = (project: Project) => {
@@ -112,64 +150,161 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button className="h-11 gap-2 rounded-xl bg-gold-500 px-5 text-forest-950 shadow-warm-lg hover:bg-gold-400">
-                <Plus className="h-4 w-4" />
-                New Project
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md border-warm-200 bg-white">
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 font-display text-warm-950">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gold-100">
-                    <Leaf className="h-4 w-4 text-gold-600" />
-                  </div>
-                  Create New Project
-                </DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleCreate} className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="proj-name" className="text-warm-800 font-medium">
-                    Project Name <span className="text-red-500">*</span>
-                  </Label>
-                  <Input
-                    id="proj-name"
-                    placeholder="e.g. Cloud API v2"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="h-10 border-warm-200 bg-white focus-visible:ring-forest-700"
-                    required
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="proj-desc" className="text-warm-800 font-medium">
-                    Description <span className="text-warm-500 font-normal">(optional)</span>
-                  </Label>
-                  <Input
-                    id="proj-desc"
-                    placeholder="Brief description of the project"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    className="h-10 border-warm-200 bg-white focus-visible:ring-forest-700"
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  disabled={createMutation.isPending || !name.trim()}
-                  className="w-full bg-forest-900 text-warm-50 hover:bg-forest-800"
-                >
-                  {createMutation.isPending ? (
-                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</>
-                  ) : (
-                    'Create Project'
-                  )}
+          <div className="flex flex-wrap gap-2">
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button className="h-11 gap-2 rounded-xl bg-gold-500 px-5 text-forest-950 shadow-warm-lg hover:bg-gold-400">
+                  <Plus className="h-4 w-4" />
+                  New Project
                 </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md border-warm-200 bg-white">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 font-display text-warm-950">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-gold-100">
+                      <Leaf className="h-4 w-4 text-gold-600" />
+                    </div>
+                    Create New Project
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleCreate} className="space-y-4 pt-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="proj-name" className="text-warm-800 font-medium">
+                      Project Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="proj-name"
+                      placeholder="e.g. Cloud API v2"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="h-10 border-warm-200 bg-white focus-visible:ring-forest-700"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="proj-desc" className="text-warm-800 font-medium">
+                      Description <span className="text-warm-500 font-normal">(optional)</span>
+                    </Label>
+                    <Input
+                      id="proj-desc"
+                      placeholder="Brief description of the project"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      className="h-10 border-warm-200 bg-white focus-visible:ring-forest-700"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-warm-800 font-medium">Workspace</Label>
+                    <select
+                      value={projectScope}
+                      onChange={(e) => setProjectScope(e.target.value as 'PERSONAL' | 'ORG')}
+                      className="h-10 w-full rounded-md border border-warm-200 bg-white px-3 text-sm text-warm-800 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700"
+                    >
+                      <option value="PERSONAL">Personal Workspace</option>
+                      {organizations.length > 0 && <option value="ORG">Organization Workspace</option>}
+                    </select>
+                  </div>
+
+                  {projectScope === 'ORG' && (
+                    <div className="space-y-1.5">
+                      <Label className="text-warm-800 font-medium">Organization</Label>
+                      <select
+                        value={projectOrganizationId}
+                        onChange={(e) => setProjectOrganizationId(e.target.value)}
+                        className="h-10 w-full rounded-md border border-warm-200 bg-white px-3 text-sm text-warm-800 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700"
+                      >
+                        <option value="">Select organization</option>
+                        {organizations.map((org) => (
+                          <option key={org.id} value={org.id}>{org.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={createMutation.isPending || !name.trim() || (projectScope === 'ORG' && !projectOrganizationId)}
+                    className="w-full bg-forest-900 text-warm-50 hover:bg-forest-800"
+                  >
+                    {createMutation.isPending ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</>
+                    ) : (
+                      'Create Project'
+                    )}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={orgOpen} onOpenChange={setOrgOpen}>
+              <DialogTrigger asChild>
+                <Button className="h-11 gap-2 rounded-xl border border-forest-300 bg-white px-5 text-forest-700 hover:bg-forest-50">
+                  <Building2 className="h-4 w-4" />
+                  New Organization
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md border-warm-200 bg-white">
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 font-display text-warm-950">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-md bg-forest-100">
+                      <Users className="h-4 w-4 text-forest-700" />
+                    </div>
+                    Create Organization
+                  </DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleCreateOrganization} className="space-y-4 pt-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="org-name" className="text-warm-800 font-medium">
+                      Organization Name <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="org-name"
+                      placeholder="e.g. GreenPulse Platform Team"
+                      value={orgName}
+                      onChange={(e) => setOrgName(e.target.value)}
+                      className="h-10 border-warm-200 bg-white focus-visible:ring-forest-700"
+                      required
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    disabled={createOrganizationMutation.isPending || !orgName.trim()}
+                    className="w-full bg-forest-900 text-warm-50 hover:bg-forest-800"
+                  >
+                    {createOrganizationMutation.isPending ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Creating...</>
+                    ) : (
+                      'Create Organization'
+                    )}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       </section>
+
+      {organizations.length > 0 && (
+        <section className="surface-card reveal-up p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <Users className="h-4 w-4 text-forest-700" />
+            <h3 className="font-display text-sm font-semibold text-warm-900">Your Organizations</h3>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {organizations.map((org) => (
+              <div key={org.id} className="rounded-lg border border-warm-100 bg-white p-4">
+                <p className="font-semibold text-warm-900">{org.name}</p>
+                <p className="mt-1 text-xs text-warm-500">
+                  Role: {org.memberships?.[0]?.role ?? 'MEMBER'}
+                </p>
+                <p className="mt-1 text-xs text-warm-500">
+                  Members: {org._count?.memberships ?? 0} | Projects: {org._count?.projects ?? 0}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {projects.length > 0 && (
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-group">
@@ -260,6 +395,11 @@ export default function Dashboard() {
                       >
                         {project.name}
                       </Link>
+                      {project.organization && (
+                        <span className="mt-1 inline-flex rounded-full bg-forest-50 px-2 py-0.5 text-[11px] font-medium text-forest-700">
+                          {project.organization.name}
+                        </span>
+                      )}
                       <p className="mt-0.5 line-clamp-2 text-sm text-warm-600">
                         {project.description || 'No description provided.'}
                       </p>

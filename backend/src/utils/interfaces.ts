@@ -23,6 +23,7 @@ export interface UpdateImpactDTO {
 export interface CreateProjectDTO {
   name: string;
   description?: string;
+  organizationId?: number;
 }
 
 export interface UpdateProjectDTO {

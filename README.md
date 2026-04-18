@@ -8,6 +8,7 @@ GreenPulse currently provides:
 
 - Email/password authentication with JWT
 - Google OAuth sign-in and account linking by email
+- Organization and team workspaces with membership-based project access
 - Project CRUD with strict ownership checks
 - Impact event CRUD with automatic CO2 score calculation
 - Search, filter, sort, and pagination for impact logs
@@ -71,6 +72,7 @@ GreenPulse/
       controllers/
         auth.controller.ts
         impact.controller.ts
+        organization.controller.ts
         project.controller.ts
       middleware/
         auth.middleware.ts
@@ -82,6 +84,7 @@ GreenPulse/
         alert.repository.ts
         complianceReport.repository.ts
         impact.repository.ts
+        organization.repository.ts
         project.repository.ts
         reportSchedule.repository.ts
         user.repository.ts
@@ -90,12 +93,14 @@ GreenPulse/
       routes/
         auth.routes.ts
         impact.routes.ts
+        organization.routes.ts
         project.routes.ts
       services/
         audit.service.ts
         auth.service.ts
         compliance.service.ts
         impact.service.ts
+        organization.service.ts
         project.service.ts
         notifications/
           NotificationService.ts
@@ -231,6 +236,16 @@ Authorization: Bearer <token>
 | `GET` | `/api/projects/:id/alerts/stream` | Subscribe to live threshold alerts (SSE fallback) |
 | `PATCH` | `/api/projects/:id/alerts/read` | Mark alerts read |
 
+### Organization Routes
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| `POST` | `/api/organizations` | Create organization |
+| `GET` | `/api/organizations` | List organizations for current user |
+| `GET` | `/api/organizations/:id/members` | List organization members |
+| `POST` | `/api/organizations/:id/members` | Add member by email |
+| `DELETE` | `/api/organizations/:id/members/:memberUserId` | Remove member |
+
 ### Realtime Channel
 
 Socket.IO connection:
@@ -276,8 +291,11 @@ Supported impact list query params:
 - `Project` has many `AuditLog`
 - `Project` has one `ReportSchedule`
 - `Project` has many `ComplianceReport`
+- `Organization` has many `Project`
+- `Organization` has many `OrganizationMembership`
 - `User` has many `AuditLog`
 - `User` has many `ReportSchedule` and `ComplianceReport`
+- `User` has many `OrganizationMembership`
 - Deleting a project cascades to impact logs and alerts
 
 See `backend/prisma/schema.prisma` for source of truth.
@@ -294,7 +312,6 @@ See `backend/prisma/schema.prisma` for source of truth.
 
 Planned next milestones:
 
-- Organization and team-level multi-tenancy
 - RBAC with role-scoped permissions
 - Cloud provider ingestion adapters
 - Organization-level audit retention and export controls

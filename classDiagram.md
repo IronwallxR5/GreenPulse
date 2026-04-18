@@ -392,6 +392,6 @@ classDiagram
 
 ## Planned Extensions (Not Implemented Yet)
 
-- Organization and team domain classes
 - Role/permission classes for RBAC
 - Additional notification channels (email/webhook)
+- Cloud ingestion connectors and normalization models
