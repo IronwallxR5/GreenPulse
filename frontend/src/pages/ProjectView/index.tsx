@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { projectService } from '../../services/project.service';
-import type { ProjectAlert, ProjectAlertStreamEvent } from '../../services/project.service';
+import type { ProjectAlert, ProjectAlertStreamEvent, ProjectAuditLog } from '../../services/project.service';
 import {
   impactService,
   type ImpactLog,
@@ -45,6 +45,26 @@ const getCarbonIntensity = (score: number) => {
   if (score < 0.1)  return { label: 'Low',      color: 'text-green-500' };
   if (score < 1)    return { label: 'Medium',    color: 'text-yellow-600' };
   return                   { label: 'High',      color: 'text-red-600' };
+};
+
+const formatAuditAction = (action: string) =>
+  action
+    .toLowerCase()
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+
+const summarizeAuditMetadata = (metadata: Record<string, unknown> | null) => {
+  if (!metadata) {
+    return null;
+  }
+
+  const summary = Object.entries(metadata)
+    .slice(0, 3)
+    .map(([key, value]) => `${key}: ${String(value)}`)
+    .join(' | ');
+
+  return summary || null;
 };
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -102,7 +122,13 @@ export default function ProjectView() {
     queryFn: () => projectService.getAlerts(projectId),
   });
 
+  const { data: auditLogsData } = useQuery({
+    queryKey: ['projects', projectId, 'audit-logs'],
+    queryFn: () => projectService.getAuditLogs(projectId, { limit: 8 }),
+  });
+
   const unreadCount = alerts.filter((a: ProjectAlert) => !a.isRead).length;
+  const auditLogs = auditLogsData?.data ?? [];
 
   // ✅ All filter params are in the query key → auto-refetches on any change
   const { data: impactsData, isLoading: impactsLoading, isFetching } = useQuery({
@@ -207,6 +233,7 @@ export default function ProjectView() {
         queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
         queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'summary'] });
         queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'alerts'] });
+        queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'audit-logs'] });
       },
       () => setStreamStatus('live'),
       (_error) => setStreamStatus((prev) => (prev === 'live' ? prev : 'error')),
@@ -580,6 +607,44 @@ export default function ProjectView() {
           </div>
         </div>
       )}
+
+      {/* ── Audit Trail Panel ─────────────────────────────────────────────── */}
+      <div className="surface-card reveal-up stagger-2 overflow-hidden">
+        <div className="flex items-center justify-between border-b border-warm-100 bg-warm-50 px-5 py-3">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-forest-700" />
+            <h3 className="font-display text-sm font-semibold text-warm-900">Audit Trail</h3>
+          </div>
+          <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-warm-600">
+            {auditLogsData?.pagination.total ?? 0} entries
+          </span>
+        </div>
+
+        {auditLogs.length === 0 ? (
+          <div className="px-5 py-6 text-sm text-warm-500">
+            No audit entries yet for this project.
+          </div>
+        ) : (
+          <div className="divide-y divide-warm-100">
+            {auditLogs.map((entry: ProjectAuditLog) => (
+              <div key={entry.id} className="px-5 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-medium text-warm-800">{formatAuditAction(entry.action)}</p>
+                  <p className="text-xs text-warm-500">
+                    {new Date(entry.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                  </p>
+                </div>
+                <p className="mt-1 text-xs text-warm-500">
+                  {entry.entityType}{entry.entityId ? ` #${entry.entityId}` : ''}
+                </p>
+                {summarizeAuditMetadata(entry.metadata) && (
+                  <p className="mt-1 text-xs text-warm-600">{summarizeAuditMetadata(entry.metadata)}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ── Impact Logs section ─────────────────────────────────────────── */}
       <div className="reveal-up stagger-3">

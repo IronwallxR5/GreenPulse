@@ -24,6 +24,7 @@ model User {
   updatedAt  DateTime     @updatedAt
 
   projects   Project[]
+  auditLogs  AuditLog[]
 
   @@map("users")
 }
@@ -40,6 +41,7 @@ model Project {
   user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   impactLogs    ImpactLog[]
   alerts        Alert[]
+  auditLogs     AuditLog[]
 
   @@index([userId])
   @@map("projects")
@@ -78,4 +80,24 @@ model Alert {
   @@index([projectId])
   @@index([createdAt])
   @@map("alerts")
+}
+
+model AuditLog {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  projectId   Int?
+  action      String
+  entityType  String
+  entityId    Int?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project     Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([projectId])
+  @@index([createdAt])
+  @@index([action])
+  @@map("audit_logs")
 }

@@ -35,6 +35,8 @@ class ProjectRoutes implements Routes {
 
     this.router.get(`${this.path}/:id/alerts`, authenticateToken, this.projectController.getAlerts);
 
+    this.router.get(`${this.path}/:id/audit-logs`, authenticateToken, this.projectController.getAuditLogs);
+
     this.router.get(
       `${this.path}/:id/alerts/stream`,
       authenticateTokenAllowQuery,

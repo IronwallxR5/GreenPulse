@@ -14,6 +14,7 @@ GreenPulse currently provides:
 - Per-project summary and cross-project analytics dashboards
 - Carbon budget thresholds with persisted alert records
 - Real-time threshold alerts in Project View (WebSocket with SSE fallback)
+- Project-level audit trail for compliance and change traceability
 - PDF and CSV report export
 
 ## Tech Stack
@@ -76,15 +77,19 @@ GreenPulse/
       models/
         ImpactEvent.ts
       repositories/
+        audit.repository.ts
         alert.repository.ts
         impact.repository.ts
         project.repository.ts
         user.repository.ts
+      realtime/
+        alertSocket.gateway.ts
       routes/
         auth.routes.ts
         impact.routes.ts
         project.routes.ts
       services/
+        audit.service.ts
         auth.service.ts
         impact.service.ts
         project.service.ts
@@ -212,6 +217,7 @@ Authorization: Bearer <token>
 | `GET` | `/api/projects/:id/report?format=pdf|csv` | Download report |
 | `PUT` | `/api/projects/:id/budget` | Set or clear carbon budget |
 | `GET` | `/api/projects/:id/alerts` | List threshold alerts |
+| `GET` | `/api/projects/:id/audit-logs` | List project audit log entries |
 | `GET` | `/api/projects/:id/alerts/stream` | Subscribe to live threshold alerts (SSE fallback) |
 | `PATCH` | `/api/projects/:id/alerts/read` | Mark alerts read |
 
@@ -257,6 +263,8 @@ Supported impact list query params:
 - `User` owns many `Project`
 - `Project` has many `ImpactLog`
 - `Project` has many `Alert`
+- `Project` has many `AuditLog`
+- `User` has many `AuditLog`
 - Deleting a project cascades to impact logs and alerts
 
 See `backend/prisma/schema.prisma` for source of truth.
@@ -275,6 +283,5 @@ Planned next milestones:
 
 - Organization and team-level multi-tenancy
 - RBAC with role-scoped permissions
-- Audit logging for compliance reporting
 - Cloud provider ingestion adapters
 - Automated recurring compliance reports

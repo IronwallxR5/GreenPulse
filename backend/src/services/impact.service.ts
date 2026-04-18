@@ -10,6 +10,7 @@ import {
   ImpactEvent,
 } from '../models/ImpactEvent';
 import { NotificationService } from './notifications/NotificationService';
+import AuditService from './audit.service';
 
 interface GetAllFilters {
   type?: ImpactType;
@@ -24,11 +25,13 @@ class ImpactService {
   private impactRepository: ImpactRepository;
   private projectRepository: ProjectRepository;
   private notificationService: NotificationService;
+  private auditService: AuditService;
 
   constructor() {
     this.impactRepository = new ImpactRepository();
     this.projectRepository = new ProjectRepository();
     this.notificationService = NotificationService.getInstance();
+    this.auditService = new AuditService();
   }
 
   private async verifyProjectOwnership(projectId: number, userId: number) {
@@ -52,6 +55,19 @@ class ImpactService {
       projectId,
     });
 
+    await this.auditService.log({
+      userId,
+      projectId,
+      action: 'IMPACT_CREATED',
+      entityType: 'IMPACT_LOG',
+      entityId: impact.id,
+      metadata: {
+        type: impact.type,
+        unitValue: impact.unitValue,
+        carbonScore: impact.carbonScore,
+      },
+    });
+
     // ── Observer Pattern: check threshold after impact is persisted ──────────────────
     if (project.carbonBudget != null) {
       const summary = await this.impactRepository.getSummaryByProjectId(projectId);
@@ -61,6 +77,19 @@ class ImpactService {
           summary.totalCO2,
           project.carbonBudget,
         );
+
+        await this.auditService.log({
+          userId,
+          projectId,
+          action: 'PROJECT_BUDGET_EXCEEDED',
+          entityType: 'PROJECT',
+          entityId: projectId,
+          metadata: {
+            totalCO2: summary.totalCO2,
+            budget: project.carbonBudget,
+            triggeredByImpactId: impact.id,
+          },
+        });
       }
     }
 
@@ -105,7 +134,20 @@ class ImpactService {
       updateData.carbonScore = this.calculateCO2(type, unitValue);
     }
 
-    return await this.impactRepository.update(id, updateData);
+    const updated = await this.impactRepository.update(id, updateData);
+
+    await this.auditService.log({
+      userId,
+      projectId: existingImpact.projectId,
+      action: 'IMPACT_UPDATED',
+      entityType: 'IMPACT_LOG',
+      entityId: updated.id,
+      metadata: {
+        changedFields: Object.keys(data).filter((key) => (data as any)[key] !== undefined),
+      },
+    });
+
+    return updated;
   }
 
   async deleteImpact(id: number, userId: number) {
@@ -118,6 +160,18 @@ class ImpactService {
     if (impact.project.userId !== userId) {
       throw new Error('Unauthorized access');
     }
+
+    await this.auditService.log({
+      userId,
+      projectId: impact.projectId,
+      action: 'IMPACT_DELETED',
+      entityType: 'IMPACT_LOG',
+      entityId: impact.id,
+      metadata: {
+        type: impact.type,
+        carbonScore: impact.carbonScore,
+      },
+    });
 
     return await this.impactRepository.delete(id);
   }

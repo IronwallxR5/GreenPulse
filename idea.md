@@ -56,6 +56,12 @@ GreenPulse addresses this gap with project-scoped impact logging and determinist
 - API and UI support for viewing alerts and marking them as read
 - Real-time threshold alert delivery via WebSocket (with SSE compatibility endpoint)
 
+### Audit and Compliance
+
+- Structured audit log entries for key project and impact mutations
+- Project-level API to review chronological change history
+- Project view panel for recent audit trail visibility
+
 ## Architectural Intent
 
 GreenPulse intentionally uses OOP and pattern-oriented design where it provides real value:
@@ -88,9 +94,9 @@ Out of scope now:
 
 1. Add organizations and team workspaces.
 2. Introduce RBAC (member/admin roles).
-3. Add audit logs for change traceability.
-4. Integrate cloud provider usage ingestion.
-5. Add scheduled recurring compliance reports.
+3. Integrate cloud provider usage ingestion.
+4. Add scheduled recurring compliance reports.
+5. Add organization-level audit retention and export controls.
 
 ## Success Criteria
 

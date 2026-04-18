@@ -46,9 +46,22 @@ erDiagram
         timestamp created_at
     }
 
+    AUDIT_LOGS {
+        int id PK
+        int user_id FK
+        int project_id FK "nullable"
+        varchar action
+        varchar entity_type
+        int entity_id "nullable"
+        json metadata "nullable"
+        timestamp created_at
+    }
+
     USERS ||--o{ PROJECTS : owns
     PROJECTS ||--o{ IMPACT_LOGS : contains
     PROJECTS ||--o{ ALERTS : raises
+    USERS ||--o{ AUDIT_LOGS : records
+    PROJECTS ||--o{ AUDIT_LOGS : scopes
 ```
 
 ## Table Summary
@@ -59,6 +72,7 @@ erDiagram
 | `projects` | Carbon tracking scope per user | Optional `carbonBudget` threshold |
 | `impact_logs` | Raw impact events + calculated CO2 | Belongs to one project |
 | `alerts` | Threshold exceedance records | Created when total CO2 crosses budget |
+| `audit_logs` | Compliance trace of key mutations | Links actor user and optional project scope |
 
 ## Key Constraints
 
@@ -67,6 +81,8 @@ erDiagram
 - `projects.userId` references `users.id` with `onDelete: Cascade`.
 - `impact_logs.projectId` references `projects.id` with `onDelete: Cascade`.
 - `alerts.projectId` references `projects.id` with `onDelete: Cascade`.
+- `audit_logs.userId` references `users.id` with `onDelete: Cascade`.
+- `audit_logs.projectId` references `projects.id` with `onDelete: SetNull`.
 
 ## Key Indexes
 
@@ -75,6 +91,7 @@ erDiagram
 | `projects` | `(userId)` |
 | `impact_logs` | `(projectId)`, `(type)`, `(createdAt)` |
 | `alerts` | `(projectId)`, `(createdAt)` |
+| `audit_logs` | `(userId)`, `(projectId)`, `(createdAt)`, `(action)` |
 
 ## Planned Data Model Extensions
 
@@ -82,4 +99,4 @@ Not yet implemented, but expected future additions include:
 
 - organization and membership tables
 - role and permission tables for RBAC
-- audit log tables for traceability
+- cloud-ingestion and usage-normalization tables

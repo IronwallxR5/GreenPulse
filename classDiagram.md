@@ -48,6 +48,17 @@ classDiagram
         +createdAt: DateTime
     }
 
+    class AuditLog {
+        +id: int
+        +userId: int
+        +projectId: int_nullable
+        +action: string
+        +entityType: string
+        +entityId: int_nullable
+        +metadata: json_nullable
+        +createdAt: DateTime
+    }
+
     class ImpactType {
         <<enumeration>>
         COMPUTE
@@ -103,6 +114,7 @@ classDiagram
         +getProjectReport(req, res): void
         +setBudget(req, res): void
         +getAlerts(req, res): void
+        +getAuditLogs(req, res): void
         +streamAlerts(req, res): void
         +markAlertsRead(req, res): void
     }
@@ -129,6 +141,7 @@ classDiagram
     class ProjectService {
         -projectRepository: ProjectRepository
         -alertRepository: AlertRepository
+        -auditService: AuditService
         +createProject(data, userId): Project
         +getProjectById(id, userId): Project
         +getAllProjects(userId): ProjectList
@@ -137,6 +150,7 @@ classDiagram
         +getProjectSummary(id, userId): Summary
         +setBudget(id, budget, userId): Project
         +getAlerts(id, userId): AlertList
+        +getAuditLogs(id, userId, filters): AuditLogList
         +markAlertsRead(id, userId): void
     }
 
@@ -144,6 +158,7 @@ classDiagram
         -impactRepository: ImpactRepository
         -projectRepository: ProjectRepository
         -notificationService: NotificationService
+        -auditService: AuditService
         +createImpact(data, projectId, userId): ImpactLog
         +getImpactById(id, userId): ImpactLog
         +getAllImpacts(projectId, userId, filters): ImpactList
@@ -152,6 +167,13 @@ classDiagram
         +getSummary(projectId, userId): Summary
         -verifyProjectOwnership(projectId, userId): Project
         -calculateCO2(type, unitValue): float
+    }
+
+    class AuditService {
+        -auditRepository: AuditRepository
+        -projectRepository: ProjectRepository
+        +log(input): AuditLog
+        +getProjectAuditLogs(projectId, userId, filters): AuditLogList
     }
 
     class NotificationService {
@@ -230,9 +252,16 @@ classDiagram
         +countUnread(projectId): int
     }
 
+    class AuditRepository {
+        +create(data): AuditLog
+        +findByProjectId(projectId, userId, filters): AuditLogList
+    }
+
     User "1" --> "*" Project : owns
     Project "1" --> "*" ImpactLog : contains
     Project "1" --> "*" Alert : raises
+    User "1" --> "*" AuditLog : records
+    Project "1" --> "*" AuditLog : scopes
     ImpactLog --> ImpactType
 
     ImpactEvent <|-- ComputeEvent
@@ -249,13 +278,17 @@ classDiagram
     AuthService --> UserRepository
     ProjectService --> ProjectRepository
     ProjectService --> AlertRepository
+    ProjectService --> AuditService
     ImpactService --> ImpactRepository
     ImpactService --> ProjectRepository
     ImpactService --> NotificationService
+    ImpactService --> AuditService
     ImpactService ..> ImpactEvent : factory + polymorphism
 
     NotificationService --> AlertRepository
     NotificationService --> AlertSocketGateway
+    AuditService --> AuditRepository
+    AuditService --> ProjectRepository
     ReportingService --> ProjectRepository
     ReportingService --> ImpactRepository
     ReportingService --> IReportStrategy
@@ -272,6 +305,7 @@ classDiagram
 | Strategy | `ReportingService` + report strategies | Runtime selection of PDF/CSV generation |
 | Observer (lightweight) | `NotificationService` | Threshold notification fan-out + durable alert record |
 | Pub/Sub Gateway | `AlertSocketGateway` + Socket.IO rooms | Project-scoped realtime multi-client alert delivery |
+| Audit Trail | `AuditService` + `AuditRepository` | Durable traceability for key project/impact mutations |
 | Repository | `*.repository.ts` classes | Database abstraction over Prisma |
 
 ## Planned Extensions (Not Implemented Yet)

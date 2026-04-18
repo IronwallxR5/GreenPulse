@@ -155,6 +155,23 @@ class ProjectController {
     }
   };
 
+  getAuditLogs = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const id = parseInt(String(req.params.id));
+      const action = req.query.action ? String(req.query.action) : undefined;
+      const page = req.query.page ? parseInt(String(req.query.page)) : undefined;
+      const limit = req.query.limit ? parseInt(String(req.query.limit)) : undefined;
+
+      const auditLogs = await this.projectService.getAuditLogs(id, userId, { action, page, limit });
+      res.status(StatusCodes.OK).json(auditLogs);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to get audit logs';
+      const status = message === 'Project not found' ? StatusCodes.NOT_FOUND : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
   markAlertsRead = async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.userId!;

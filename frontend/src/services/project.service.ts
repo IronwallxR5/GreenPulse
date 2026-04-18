@@ -42,6 +42,27 @@ export interface ProjectAlertStreamEvent {
   timestamp: string;
 }
 
+export interface ProjectAuditLog {
+  id: number;
+  userId: number;
+  projectId: number | null;
+  action: string;
+  entityType: string;
+  entityId: number | null;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export interface ProjectAuditLogList {
+  data: ProjectAuditLog[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
 interface ProjectAlertSocketAck {
   ok: boolean;
   message?: string;
@@ -118,6 +139,13 @@ export const projectService = {
 
   async markAlertsRead(id: number): Promise<void> {
     await api.patch(`/projects/${id}/alerts/read`);
+  },
+
+  async getAuditLogs(id: number, params?: { page?: number; limit?: number; action?: string }): Promise<ProjectAuditLogList> {
+    const res = await api.get(`/projects/${id}/audit-logs`, {
+      params,
+    });
+    return res.data;
   },
 
   streamAlerts(

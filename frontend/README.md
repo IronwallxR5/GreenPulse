@@ -13,6 +13,7 @@ The frontend provides:
 - Analytics charts by project and impact type
 - Budget and threshold alert experience
 - Live threshold alert updates via WebSocket (SSE fallback supported)
+- Project-level audit trail panel for change history
 - Profile view and session controls
 
 ## Stack

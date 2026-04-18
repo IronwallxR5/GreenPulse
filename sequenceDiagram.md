@@ -12,6 +12,8 @@ sequenceDiagram
     participant VM as Validation Middleware
     participant IC as ImpactController
     participant IS as ImpactService
+    participant AUS as AuditService
+    participant AUR as AuditRepository
     participant PR as ProjectRepository
     participant F as ImpactEvent Factory
     participant IR as ImpactRepository
@@ -60,6 +62,11 @@ sequenceDiagram
     DB-->>IR: created impact
     IR-->>IS: impact
 
+    IS->>AUS: log(IMPACT_CREATED)
+    AUS->>AUR: create audit log
+    AUR->>DB: INSERT audit_logs
+    DB-->>AUR: audit row
+
     opt project has carbonBudget
         IS->>IR: getSummaryByProjectId(projectId)
         IR->>DB: aggregate total CO2
@@ -74,6 +81,9 @@ sequenceDiagram
             NS->>AG: emitThresholdAlertToProject(payload)
             AG-->>WS: threshold-alert {projectId, totalCO2, budget, message}
             NS-->>SC: event: alert {projectId, totalCO2, budget, message}
+            IS->>AUS: log(PROJECT_BUDGET_EXCEEDED)
+            AUS->>AUR: create audit log
+            AUR->>DB: INSERT audit_logs
         end
     end
 

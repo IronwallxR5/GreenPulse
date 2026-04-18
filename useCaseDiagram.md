@@ -33,12 +33,13 @@ graph TB
         UC23[Calculate CO2 via polymorphism]
         UC24[Persist threshold alert]
         UC27[Receive live threshold alerts (WebSocket/SSE)]
+        UC28[View project audit trail]
     end
 
     subgraph Planned
         UC25[Organization and team management]
         UC26[Role-based access control]
-        UC28[Audit logs and compliance tools]
+        UC29[Cloud ingestion adapters]
     end
 
     User --> UC1
@@ -63,11 +64,13 @@ graph TB
     User --> UC20
     User --> UC21
     User --> UC27
+    User --> UC28
 
     System --> UC22
     System --> UC23
     System --> UC24
     System --> UC27
+    System --> UC28
 
     UC9 -. triggers .-> UC22
     UC22 -. selects subclass .-> UC23
@@ -103,6 +106,7 @@ graph TB
 | UC23 | Calculate CO2 via polymorphism | System | Implemented |
 | UC24 | Persist threshold alert | System | Implemented |
 | UC27 | Receive live threshold alerts (WebSocket/SSE) | User/System | Implemented |
+| UC28 | View project audit trail | User/System | Implemented |
 | UC25 | Organization and team management | User/Admin | Planned |
 | UC26 | Role-based access control | Admin/System | Planned |
-| UC28 | Audit logs and compliance tools | Admin | Planned |
+| UC29 | Cloud ingestion adapters | System | Planned |
