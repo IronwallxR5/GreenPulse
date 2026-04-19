@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useContext, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { User } from '../services/auth.service';
 
@@ -13,21 +14,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-
-  useEffect(() => {
-    // Attempt to hydrate user from localStorage on mount.
-    // In a real app we'd fetch the user using a /me endpoint if only the token exists.
+  const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        logout();
-      }
+    if (!storedUser) {
+      return null;
     }
-  }, []);
+
+    try {
+      return JSON.parse(storedUser) as User;
+    } catch {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      return null;
+    }
+  });
+
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
 
   const login = (newToken: string, newUser: User) => {
     localStorage.setItem('token', newToken);

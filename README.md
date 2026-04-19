@@ -2,6 +2,10 @@
 
 GreenPulse is a full-stack carbon footprint tracking platform for digital infrastructure. It helps teams measure and understand emissions from compute, storage, network transfer, and API calls using consistent CO2 calculations.
 
+## Live App
+
+- Hosted frontend: https://green-pulse-eta.vercel.app/
+
 ## Overview
 
 GreenPulse currently provides:
@@ -19,6 +23,13 @@ GreenPulse currently provides:
 - Project-level audit trail for compliance and change traceability
 - Automated recurring compliance report snapshots with schedule controls
 - PDF and CSV report export
+
+Recent frontend updates also include:
+
+- Refreshed global theme tokens and modernized app shell
+- Dashboard project search, workspace filters, and sort controls
+- Analytics enhancements with richer KPI cards and trend views
+- Polished auth flows with improved form interactions
 
 ## Tech Stack
 
@@ -170,7 +181,7 @@ Edit `backend/.env` before running.
 Run migrations and start server:
 
 ```bash
-npx prisma migrate dev --name init
+npx prisma migrate dev
 npm run dev
 ```
 
@@ -196,6 +207,23 @@ npm run dev
 ```
 
 Frontend runs at `http://localhost:5173`.
+
+### 3) Quality Checks
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
+
+Backend:
+
+```bash
+cd backend
+npm run build
+```
 
 ## API Summary
 
@@ -309,6 +337,12 @@ See `backend/prisma/schema.prisma` for source of truth.
 - `ErDiagram.md`: ER diagram aligned with Prisma schema
 - `sequenceDiagram.md`: key request flows
 - `useCaseDiagram.md`: actor/use-case view of implemented and planned behavior
+
+## Deployment Notes
+
+- Frontend is deployed on Vercel at https://green-pulse-eta.vercel.app/
+- SPA route refresh fallback is configured via `frontend/vercel.json`
+- Configure backend CORS and OAuth env vars so `FRONTEND_URL` points to the hosted frontend URL in production
 
 ## Roadmap
 

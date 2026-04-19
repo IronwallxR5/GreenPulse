@@ -2,12 +2,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '../../services/project.service';
 import type { Project, Organization, OrganizationMember, OrganizationRole } from '../../services/project.service';
 import { Link } from 'react-router-dom';
-import { Plus, Trash2, FolderOpen, ArrowRight, Loader2, Leaf, Pencil, Sparkles, Gauge, Layers3, Building2, Users } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  FolderOpen,
+  ArrowRight,
+  Loader2,
+  Leaf,
+  Pencil,
+  Sparkles,
+  Gauge,
+  Layers3,
+  Building2,
+  Users,
+  Search,
+  SlidersHorizontal,
+  ArrowUpDown,
+} from 'lucide-react';
 import { Button } from '../../components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Dashboard() {
@@ -34,6 +50,9 @@ export default function Dashboard() {
   const [editTarget, setEditTarget]           = useState<Project | null>(null);
   const [editName, setEditName]               = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [projectSearch, setProjectSearch] = useState('');
+  const [workspaceFilter, setWorkspaceFilter] = useState<'ALL' | 'PERSONAL' | 'ORG'>('ALL');
+  const [projectSort, setProjectSort] = useState<'LATEST' | 'NAME' | 'ACTIVITY'>('LATEST');
 
   const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ['projects'],
@@ -210,7 +229,42 @@ export default function Dashboard() {
   const totalEvents = projects.reduce((sum, p) => sum + (p._count?.impactLogs || 0), 0);
   const avgEventsPerProject = projects.length > 0 ? totalEvents / projects.length : 0;
   const activeProjects = projects.filter((p) => (p._count?.impactLogs || 0) > 0).length;
-  const topProject = [...projects].sort((a, b) => (b._count?.impactLogs || 0) - (a._count?.impactLogs || 0))[0];
+
+  const visibleProjects = useMemo(() => {
+    const normalizedSearch = projectSearch.trim().toLowerCase();
+
+    const filtered = projects.filter((project) => {
+      const matchesScope =
+        workspaceFilter === 'ALL'
+          ? true
+          : workspaceFilter === 'ORG'
+            ? Boolean(project.organizationId)
+            : !project.organizationId;
+
+      const matchesSearch =
+        normalizedSearch.length === 0
+          ? true
+          : `${project.name} ${project.description ?? ''} ${project.organization?.name ?? ''}`
+              .toLowerCase()
+              .includes(normalizedSearch);
+
+      return matchesScope && matchesSearch;
+    });
+
+    return filtered.sort((a, b) => {
+      if (projectSort === 'NAME') {
+        return a.name.localeCompare(b.name);
+      }
+
+      if (projectSort === 'ACTIVITY') {
+        return (b._count?.impactLogs || 0) - (a._count?.impactLogs || 0);
+      }
+
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+  }, [projects, projectSearch, workspaceFilter, projectSort]);
+
+  const topProject = [...visibleProjects].sort((a, b) => (b._count?.impactLogs || 0) - (a._count?.impactLogs || 0))[0];
 
   return (
     <div className="space-y-7 route-enter">
@@ -566,7 +620,7 @@ export default function Dashboard() {
         <section className="reveal-up stagger-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="section-heading">
-            Your Projects ({projects.length})
+              Your Projects ({visibleProjects.length})
             </h2>
             {topProject && (
               <p className="hidden text-xs text-warm-500 sm:block">
@@ -575,8 +629,57 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-group">
-            {projects.map((project: Project) => (
+          <div className="surface-panel mb-4 grid grid-cols-1 gap-3 p-3 md:grid-cols-[1fr_auto_auto_auto] md:items-center">
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-warm-500" />
+              <Input
+                value={projectSearch}
+                onChange={(e) => setProjectSearch(e.target.value)}
+                placeholder="Search projects, descriptions, or organizations"
+                className="h-10 border-warm-200 bg-white pl-10 focus-visible:ring-forest-700"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-warm-200 bg-white px-3 py-2 text-xs text-warm-600">
+              <SlidersHorizontal className="h-3.5 w-3.5 text-forest-600" />
+              <select
+                value={workspaceFilter}
+                onChange={(e) => setWorkspaceFilter(e.target.value as 'ALL' | 'PERSONAL' | 'ORG')}
+                className="bg-transparent text-xs font-semibold text-warm-700 focus:outline-none"
+              >
+                <option value="ALL">All workspaces</option>
+                <option value="PERSONAL">Personal only</option>
+                <option value="ORG">Organization only</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-xl border border-warm-200 bg-white px-3 py-2 text-xs text-warm-600">
+              <ArrowUpDown className="h-3.5 w-3.5 text-forest-600" />
+              <select
+                value={projectSort}
+                onChange={(e) => setProjectSort(e.target.value as 'LATEST' | 'NAME' | 'ACTIVITY')}
+                className="bg-transparent text-xs font-semibold text-warm-700 focus:outline-none"
+              >
+                <option value="LATEST">Latest first</option>
+                <option value="ACTIVITY">Most active</option>
+                <option value="NAME">Name A-Z</option>
+              </select>
+            </div>
+
+            <div className="rounded-xl border border-warm-200 bg-white px-3 py-2 text-center text-xs font-semibold text-warm-600">
+              Showing {visibleProjects.length} / {projects.length}
+            </div>
+          </div>
+
+          {visibleProjects.length === 0 && (
+            <div className="surface-card p-10 text-center">
+              <p className="text-sm text-warm-600">No projects match your current filters. Try another search or workspace scope.</p>
+            </div>
+          )}
+
+          {visibleProjects.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 stagger-group">
+              {visibleProjects.map((project: Project) => (
               <div
                 key={project.id}
                 className="surface-card interactive-lift group overflow-hidden"
@@ -636,8 +739,9 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

@@ -1,9 +1,12 @@
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { projectService } from '../../services/project.service';
 import type { ProjectSummary } from '../../services/project.service';
+import { useState } from 'react';
 import {
   BarChart,
   Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -14,7 +17,7 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { TrendingUp, Activity, Loader2, Leaf, Orbit } from 'lucide-react';
+import { TrendingUp, Activity, Loader2, Leaf, Orbit, Flame, GaugeCircle } from 'lucide-react';
 
 const TYPE_COLORS: Record<string, string> = {
   COMPUTE: '#1e6672',
@@ -36,7 +39,22 @@ const PROJECT_COLORS = [
   '#b97a28',
 ];
 
-const BarTooltip = ({ active, payload, label }: any) => {
+interface ChartTooltipPayload {
+  value: number;
+  name: string;
+  payload?: {
+    fill?: string;
+    count?: number;
+  };
+}
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: ChartTooltipPayload[];
+  label?: string;
+}
+
+const BarTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
 
   return (
@@ -47,20 +65,24 @@ const BarTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-const PieTooltip = ({ active, payload }: any) => {
+const PieTooltip = ({ active, payload }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   const d = payload[0];
+  const fill = d.payload?.fill ?? '#77bcc2';
+  const count = d.payload?.count ?? 0;
 
   return (
     <div className="rounded-xl border border-forest-800 bg-forest-950 p-3 text-sm shadow-warm-lg">
-      <p className="font-semibold" style={{ color: d.payload.fill }}>{d.name}</p>
+      <p className="font-semibold" style={{ color: fill }}>{d.name}</p>
       <p className="text-warm-300">{d.value.toFixed(4)} kg CO2e</p>
-      <p className="text-forest-400">{d.payload.count} events</p>
+      <p className="text-forest-400">{count} events</p>
     </div>
   );
 };
 
 export default function Analytics() {
+  const [projectViewMode, setProjectViewMode] = useState<'ALL' | 'TOP8'>('TOP8');
+
   const { data: projects = [], isLoading: projectsLoading } = useQuery({
     queryKey: ['projects'],
     queryFn: projectService.getAll,
@@ -79,6 +101,7 @@ export default function Analytics() {
 
   const totalCO2 = summaries.reduce((sum, s) => sum + (s?.totalCO2 ?? 0), 0);
   const totalEvents = summaries.reduce((sum, s) => sum + (s?.totalLogs ?? 0), 0);
+  const averageEventImpact = totalEvents > 0 ? totalCO2 / totalEvents : 0;
 
   const projectBarData = projects
     .map((p, i) => ({
@@ -89,6 +112,8 @@ export default function Analytics() {
     }))
     .filter((d) => d.co2 > 0)
     .sort((a, b) => b.co2 - a.co2);
+
+  const renderedProjectData = projectViewMode === 'TOP8' ? projectBarData.slice(0, 8) : projectBarData;
 
   const typeMap: Record<string, { co2: number; count: number }> = {};
   summaries.forEach((s) => {
@@ -107,6 +132,7 @@ export default function Analytics() {
   }));
 
   const topProjects = [...projectBarData].slice(0, 5);
+  const dominantType = pieData.slice().sort((a, b) => b.value - a.value)[0];
   const isLoading = projectsLoading || summariesLoading;
 
   if (isLoading) {
@@ -188,13 +214,49 @@ export default function Analytics() {
         </div>
       </section>
 
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-2 stagger-group">
+        <div className="surface-panel p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gold-100">
+              <GaugeCircle className="h-4 w-4 text-gold-700" />
+            </div>
+            <span className="text-sm font-semibold text-warm-700">Average Event Intensity</span>
+          </div>
+          <p className="font-display text-3xl font-bold text-warm-950">{averageEventImpact.toFixed(4)}</p>
+          <p className="mt-1 text-xs text-warm-500">kg CO2e per logged event</p>
+        </div>
+
+        <div className="surface-panel p-5">
+          <div className="mb-3 flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-100">
+              <Flame className="h-4 w-4 text-red-600" />
+            </div>
+            <span className="text-sm font-semibold text-warm-700">Dominant Emission Source</span>
+          </div>
+          <p className="font-display text-3xl font-bold text-warm-950">{dominantType?.name ?? 'N/A'}</p>
+          <p className="mt-1 text-xs text-warm-500">{dominantType ? `${dominantType.value.toFixed(3)} kg CO2e` : 'No emissions yet'}</p>
+        </div>
+      </section>
+
       <section className="grid grid-cols-1 gap-6 lg:grid-cols-2 stagger-group">
         {projectBarData.length > 0 && (
           <div className="surface-card p-6">
-            <h3 className="font-display text-sm font-semibold text-warm-800">CO2 by Project</h3>
-            <p className="mb-5 text-xs text-warm-500">Total emissions per project (kg CO2e)</p>
+            <div className="mb-5 flex items-center justify-between gap-2">
+              <div>
+                <h3 className="font-display text-sm font-semibold text-warm-800">CO2 by Project</h3>
+                <p className="text-xs text-warm-500">Total emissions per project (kg CO2e)</p>
+              </div>
+              <select
+                value={projectViewMode}
+                onChange={(e) => setProjectViewMode(e.target.value as 'ALL' | 'TOP8')}
+                className="h-8 rounded-md border border-warm-200 bg-white px-2 text-xs text-warm-700 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700"
+              >
+                <option value="TOP8">Top 8</option>
+                <option value="ALL">All projects</option>
+              </select>
+            </div>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={projectBarData} margin={{ top: 0, right: 8, left: -16, bottom: 0 }}>
+              <BarChart data={renderedProjectData} margin={{ top: 0, right: 8, left: -16, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#dfe7e9" vertical={false} />
                 <XAxis
                   dataKey="name"
@@ -210,7 +272,7 @@ export default function Analytics() {
                 />
                 <Tooltip content={<BarTooltip />} cursor={{ fill: '#eef7f8' }} />
                 <Bar dataKey="co2" radius={[6, 6, 0, 0]}>
-                  {projectBarData.map((_, i) => (
+                  {renderedProjectData.map((_, i) => (
                     <Cell key={i} fill={PROJECT_COLORS[i % PROJECT_COLORS.length]} />
                   ))}
                 </Bar>
@@ -251,6 +313,28 @@ export default function Analytics() {
           </div>
         )}
       </section>
+
+      {renderedProjectData.length > 1 && (
+        <section className="surface-panel p-6 reveal-up stagger-1">
+          <h3 className="font-display text-sm font-semibold text-warm-800">Emission Trend by Ranked Projects</h3>
+          <p className="mb-4 text-xs text-warm-500">Visual comparison of project contribution intensity</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <AreaChart data={renderedProjectData} margin={{ top: 0, right: 10, left: -20, bottom: 0 }}>
+              <defs>
+                <linearGradient id="projectTrendFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#2f7f8d" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#2f7f8d" stopOpacity={0.05} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="#dfe7e9" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#51666c' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#51666c' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<BarTooltip />} />
+              <Area type="monotone" dataKey="co2" stroke="#14515c" fill="url(#projectTrendFill)" strokeWidth={2.2} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </section>
+      )}
 
       {topProjects.length > 0 && (
         <div className="surface-card reveal-up stagger-1 overflow-hidden">

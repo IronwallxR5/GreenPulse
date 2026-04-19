@@ -15,14 +15,15 @@ export default function GoogleCallback() {
   const [searchParams] = useSearchParams();
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [error, setError] = useState('');
+  const initialError = searchParams.get('error') || !searchParams.get('token')
+    ? 'Google sign-in failed. Please try again.'
+    : '';
+  const [error, setError] = useState(initialError);
 
   useEffect(() => {
     const token = searchParams.get('token');
-    const oauthError = searchParams.get('error');
 
-    if (oauthError || !token) {
-      setError('Google sign-in failed. Please try again.');
+    if (initialError || !token) {
       const timer = setTimeout(() => navigate('/login'), 3000);
       return () => clearTimeout(timer);
     }
@@ -42,7 +43,7 @@ export default function GoogleCallback() {
         const timer = setTimeout(() => navigate('/login'), 3000);
         return () => clearTimeout(timer);
       });
-  }, []);// eslint-disable-line react-hooks/exhaustive-deps
+  }, [initialError, login, navigate, searchParams]);
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-warm-50 p-4 route-enter">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigate, Link } from 'react-router-dom';
@@ -15,7 +15,19 @@ import {
   FormLabel,
   FormMessage,
 } from '../../components/ui/form';
-import { Leaf, Mail, Lock, User, AlertCircle, Loader2, CheckCircle } from 'lucide-react';
+import {
+  Leaf,
+  Mail,
+  Lock,
+  User,
+  AlertCircle,
+  Loader2,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  ShieldCheck,
+  Sparkles,
+} from 'lucide-react';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -25,10 +37,22 @@ const registerSchema = z.object({
 
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
+const getErrorMessage = (error: unknown) => {
+  if (typeof error !== 'object' || error === null) {
+    return 'Registration failed. Please try again.';
+  }
+
+  const response = (error as { response?: { data?: { message?: string; errors?: Array<{ message?: string }> } } })
+    .response;
+
+  return response?.data?.message || response?.data?.errors?.[0]?.message || 'Registration failed. Please try again.';
+};
+
 export default function Register() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -41,16 +65,16 @@ export default function Register() {
       const res = await authService.register(values);
       login(res.token, res.user);
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-        err.response?.data?.errors?.[0]?.message ||
-        'Registration failed. Please try again.'
-      );
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     }
   };
 
-  const password = form.watch('password');
+  const password = useWatch({
+    control: form.control,
+    name: 'password',
+    defaultValue: '',
+  });
   const passwordStrength =
     password.length === 0 ? null
     : password.length < 6 ? 'weak'
@@ -188,12 +212,20 @@ export default function Register() {
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-warm-500" />
                         <Input
-                          type="password"
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="Min. 6 characters"
-                          className="h-11 border-warm-200 bg-white pl-10 focus-visible:ring-forest-700"
+                          className="h-11 border-warm-200 bg-white pl-10 pr-10 focus-visible:ring-forest-700"
                           autoComplete="new-password"
                           {...field}
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((value) => !value)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-500 transition-colors hover:text-forest-700"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </FormControl>
                     {passwordStrength && (
@@ -254,6 +286,17 @@ export default function Register() {
               Sign in
             </Link>
           </p>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-warm-600">
+            <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 bg-white px-2.5 py-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-forest-600" />
+              Encrypted sessions
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 bg-white px-2.5 py-1">
+              <Sparkles className="h-3.5 w-3.5 text-gold-600" />
+              Team-ready workspace
+            </span>
+          </div>
           </div>
         </div>
       </div>

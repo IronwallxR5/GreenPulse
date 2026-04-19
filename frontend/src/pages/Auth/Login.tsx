@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from '../../components/ui/form';
-import { Leaf, Mail, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { Leaf, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, ShieldCheck, Globe } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -24,10 +24,22 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
+const getErrorMessage = (error: unknown) => {
+  if (typeof error !== 'object' || error === null) {
+    return 'Invalid email or password. Please try again.';
+  }
+
+  const response = (error as { response?: { data?: { message?: string; errors?: Array<{ message?: string }> } } })
+    .response;
+
+  return response?.data?.message || response?.data?.errors?.[0]?.message || 'Invalid email or password. Please try again.';
+};
+
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -40,12 +52,8 @@ export default function Login() {
       const res = await authService.login(values);
       login(res.token, res.user);
       navigate('/dashboard');
-    } catch (err: any) {
-      setError(
-        err.response?.data?.message ||
-        err.response?.data?.errors?.[0]?.message ||
-        'Invalid email or password. Please try again.'
-      );
+    } catch (error: unknown) {
+      setError(getErrorMessage(error));
     }
   };
 
@@ -156,12 +164,20 @@ export default function Login() {
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-warm-500" />
                         <Input
-                          type="password"
+                          type={showPassword ? 'text' : 'password'}
                           placeholder="••••••••"
-                          className="h-11 border-warm-200 bg-white pl-10 focus-visible:ring-forest-700"
+                          className="h-11 border-warm-200 bg-white pl-10 pr-10 focus-visible:ring-forest-700"
                           autoComplete="current-password"
                           {...field}
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((value) => !value)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-warm-500 transition-colors hover:text-forest-700"
+                          aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </FormControl>
                     <FormMessage />
@@ -214,6 +230,17 @@ export default function Login() {
           <p className="mt-5 text-center text-xs text-warm-400">
             By signing in, you agree to track your carbon impact responsibly.
           </p>
+
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-warm-600">
+            <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 bg-white px-2.5 py-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-forest-600" />
+              Secured auth
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 bg-white px-2.5 py-1">
+              <Globe className="h-3.5 w-3.5 text-gold-600" />
+              OAuth ready
+            </span>
+          </div>
         </div>
       </div>
     </div>

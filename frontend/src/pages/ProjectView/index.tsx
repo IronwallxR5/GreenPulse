@@ -87,6 +87,23 @@ const toLocalDateTimeInput = (iso: string) => {
   return new Date(date.getTime() - tzOffsetMs).toISOString().slice(0, 16);
 };
 
+const getApiErrorMessage = (error: unknown, fallback: string) => {
+  if (typeof error !== 'object' || error === null) {
+    return fallback;
+  }
+
+  const response = (error as {
+    response?: {
+      data?: {
+        message?: string;
+        errors?: Array<{ message?: string }>;
+      };
+    };
+  }).response;
+
+  return response?.data?.message || response?.data?.errors?.[0]?.message || fallback;
+};
+
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function ProjectView() {
@@ -125,9 +142,10 @@ export default function ProjectView() {
   const [budgetInput, setBudgetInput] = useState('');
   const [streamStatus, setStreamStatus] = useState<'connecting' | 'live' | 'error'>('connecting');
   const [liveAlertNotice, setLiveAlertNotice] = useState<string | null>(null);
-  const [scheduleFrequency, setScheduleFrequency] = useState<ReportFrequency>('WEEKLY');
-  const [scheduleFormat, setScheduleFormat] = useState<ReportFormat>('PDF');
+  const [scheduleFrequency, setScheduleFrequency] = useState<ReportFrequency | null>(null);
+  const [scheduleFormat, setScheduleFormat] = useState<ReportFormat | null>(null);
   const [scheduleStartsAt, setScheduleStartsAt] = useState('');
+  const [scheduleStartsAtTouched, setScheduleStartsAtTouched] = useState(false);
   const [scheduleNotice, setScheduleNotice] = useState<string | null>(null);
 
   // ── Queries ───────────────────────────────────────────────────────────────
@@ -164,6 +182,14 @@ export default function ProjectView() {
   const unreadCount = alerts.filter((a: ProjectAlert) => !a.isRead).length;
   const auditLogs = auditLogsData?.data ?? [];
   const complianceReports = complianceReportsData?.data ?? [];
+  const effectiveScheduleFrequency = scheduleFrequency ?? reportSchedule?.frequency ?? 'WEEKLY';
+  const effectiveScheduleFormat = scheduleFormat ?? reportSchedule?.format ?? 'PDF';
+  const effectiveScheduleStartsAt =
+    scheduleStartsAtTouched
+      ? scheduleStartsAt
+      : reportSchedule?.nextRunAt
+        ? toLocalDateTimeInput(reportSchedule.nextRunAt)
+        : '';
 
   // ✅ All filter params are in the query key → auto-refetches on any change
   const { data: impactsData, isLoading: impactsLoading, isFetching } = useQuery({
@@ -182,10 +208,12 @@ export default function ProjectView() {
 
   const impacts    = impactsData?.data        ?? [];
   const pagination = impactsData?.pagination;
+  type CreateImpactPayload = Parameters<typeof impactService.create>[1];
+  type UpdateImpactPayload = Parameters<typeof impactService.update>[2];
 
   // ── Mutations ─────────────────────────────────────────────────────────────
   const createMutation = useMutation({
-    mutationFn: (data: any) => impactService.create(projectId, data),
+    mutationFn: (data: CreateImpactPayload) => impactService.create(projectId, data),
     onSuccess: () => {
       // Invalidate summary + impacts list
       queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
@@ -194,12 +222,8 @@ export default function ProjectView() {
       setFormError('');
       setPage(1); // go back to first page to see new entry
     },
-    onError: (err: any) => {
-      setFormError(
-        err.response?.data?.message ||
-        err.response?.data?.errors?.[0]?.message ||
-        'Failed to log event',
-      );
+    onError: (error: unknown) => {
+      setFormError(getApiErrorMessage(error, 'Failed to log event'));
     },
   });
 
@@ -212,7 +236,7 @@ export default function ProjectView() {
   });
 
   const editMutation = useMutation({
-    mutationFn: (payload: { impactId: number; data: any }) =>
+    mutationFn: (payload: { impactId: number; data: UpdateImpactPayload }) =>
       impactService.update(projectId, payload.impactId, payload.data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', projectId] });
@@ -220,19 +244,15 @@ export default function ProjectView() {
       setEditTarget(null);
       setEditError('');
     },
-    onError: (err: any) => {
-      setEditError(
-        err.response?.data?.message ??
-        err.response?.data?.errors?.[0]?.message ??
-        'Failed to update event',
-      );
+    onError: (error: unknown) => {
+      setEditError(getApiErrorMessage(error, 'Failed to update event'));
     },
   });
 
   const downloadMutation = useMutation({
     mutationFn: (format: 'pdf' | 'csv') => projectService.downloadReport(projectId, format),
-    onError: (err: any) => {
-      console.error('Failed to download report', err);
+    onError: (error: unknown) => {
+      console.error('Failed to download report', error);
       alert('Failed to download report. Please try again.');
     }
   });
@@ -258,10 +278,14 @@ export default function ProjectView() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'report-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'audit-logs'] });
+      setScheduleFrequency(null);
+      setScheduleFormat(null);
+      setScheduleStartsAt('');
+      setScheduleStartsAtTouched(false);
       setScheduleNotice('Recurring report schedule saved.');
     },
-    onError: (err: any) => {
-      setScheduleNotice(err.response?.data?.message || 'Failed to save report schedule');
+    onError: (error: unknown) => {
+      setScheduleNotice(getApiErrorMessage(error, 'Failed to save report schedule'));
     },
   });
 
@@ -270,22 +294,26 @@ export default function ProjectView() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'report-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'audit-logs'] });
+      setScheduleFrequency(null);
+      setScheduleFormat(null);
+      setScheduleStartsAt('');
+      setScheduleStartsAtTouched(false);
       setScheduleNotice('Recurring report schedule removed.');
     },
-    onError: (err: any) => {
-      setScheduleNotice(err.response?.data?.message || 'Failed to remove report schedule');
+    onError: (error: unknown) => {
+      setScheduleNotice(getApiErrorMessage(error, 'Failed to remove report schedule'));
     },
   });
 
   const runComplianceNowMutation = useMutation({
-    mutationFn: () => projectService.runComplianceReportNow(projectId, { format: scheduleFormat }),
+    mutationFn: () => projectService.runComplianceReportNow(projectId, { format: effectiveScheduleFormat }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'compliance-reports'] });
       queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'audit-logs'] });
       setScheduleNotice('Compliance report generated successfully.');
     },
-    onError: (err: any) => {
-      setScheduleNotice(err.response?.data?.message || 'Failed to generate compliance report');
+    onError: (error: unknown) => {
+      setScheduleNotice(getApiErrorMessage(error, 'Failed to generate compliance report'));
     },
   });
 
@@ -293,8 +321,6 @@ export default function ProjectView() {
     if (!Number.isFinite(projectId)) {
       return;
     }
-
-    setStreamStatus('connecting');
 
     const stopStream = projectService.streamAlertsSocket(
       projectId,
@@ -308,7 +334,7 @@ export default function ProjectView() {
         queryClient.invalidateQueries({ queryKey: ['projects', projectId, 'audit-logs'] });
       },
       () => setStreamStatus('live'),
-      (_error) => setStreamStatus((prev) => (prev === 'live' ? prev : 'error')),
+      () => setStreamStatus((prev) => (prev === 'live' ? prev : 'error')),
     );
 
     return () => {
@@ -331,16 +357,6 @@ export default function ProjectView() {
   }, [liveAlertNotice]);
 
   useEffect(() => {
-    if (!reportSchedule) {
-      return;
-    }
-
-    setScheduleFrequency(reportSchedule.frequency);
-    setScheduleFormat(reportSchedule.format);
-    setScheduleStartsAt(toLocalDateTimeInput(reportSchedule.nextRunAt));
-  }, [reportSchedule]);
-
-  useEffect(() => {
     if (!scheduleNotice) {
       return;
     }
@@ -357,8 +373,8 @@ export default function ProjectView() {
   const handleSaveReportSchedule = () => {
     let startsAtIso: string | undefined;
 
-    if (scheduleStartsAt.trim()) {
-      const parsed = new Date(scheduleStartsAt);
+    if (effectiveScheduleStartsAt.trim()) {
+      const parsed = new Date(effectiveScheduleStartsAt);
       if (Number.isNaN(parsed.getTime())) {
         setScheduleNotice('Please provide a valid start datetime');
         return;
@@ -368,8 +384,8 @@ export default function ProjectView() {
     }
 
     upsertReportScheduleMutation.mutate({
-      frequency: scheduleFrequency,
-      format: scheduleFormat,
+      frequency: effectiveScheduleFrequency,
+      format: effectiveScheduleFormat,
       startsAt: startsAtIso,
     });
   };
@@ -718,7 +734,7 @@ export default function ProjectView() {
           <div>
             <Label className="text-xs font-semibold uppercase tracking-[0.14em] text-warm-700">Frequency</Label>
             <select
-              value={scheduleFrequency}
+              value={effectiveScheduleFrequency}
               onChange={(e) => setScheduleFrequency(e.target.value as ReportFrequency)}
               className="mt-1 h-10 w-full rounded-lg border border-warm-200 bg-white px-3 text-sm text-warm-800 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700"
             >
@@ -731,7 +747,7 @@ export default function ProjectView() {
           <div>
             <Label className="text-xs font-semibold uppercase tracking-[0.14em] text-warm-700">Format</Label>
             <select
-              value={scheduleFormat}
+              value={effectiveScheduleFormat}
               onChange={(e) => setScheduleFormat(e.target.value as ReportFormat)}
               className="mt-1 h-10 w-full rounded-lg border border-warm-200 bg-white px-3 text-sm text-warm-800 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700"
             >
@@ -745,8 +761,11 @@ export default function ProjectView() {
             <Label className="text-xs font-semibold uppercase tracking-[0.14em] text-warm-700">Start At (optional)</Label>
             <Input
               type="datetime-local"
-              value={scheduleStartsAt}
-              onChange={(e) => setScheduleStartsAt(e.target.value)}
+              value={effectiveScheduleStartsAt}
+              onChange={(e) => {
+                setScheduleStartsAtTouched(true);
+                setScheduleStartsAt(e.target.value);
+              }}
               className="mt-1 h-10 border-warm-200 bg-white text-sm focus-visible:ring-forest-700"
             />
           </div>
