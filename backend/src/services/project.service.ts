@@ -3,59 +3,31 @@ import AlertRepository from '../repositories/alert.repository';
 import { CreateProjectDTO, UpdateProjectDTO } from '../utils/interfaces';
 import AuditService from './audit.service';
 import OrganizationService from './organization.service';
+import RbacService, { OrganizationPermission } from './rbac.service';
 
 class ProjectService {
   private projectRepository: ProjectRepository;
   private alertRepository: AlertRepository;
   private auditService: AuditService;
   private organizationService: OrganizationService;
+  private rbacService: RbacService;
 
   constructor() {
     this.projectRepository = new ProjectRepository();
     this.alertRepository = new AlertRepository();
     this.auditService = new AuditService();
     this.organizationService = new OrganizationService();
+    this.rbacService = new RbacService();
   }
 
-  private hasProjectReadAccess(project: any, userId: number) {
-    if (!project.organizationId) {
-      return project.userId === userId;
-    }
-
-    return project.organization?.memberships?.some((membership: any) => membership.userId === userId);
-  }
-
-  private hasProjectManageAccess(project: any, userId: number) {
-    if (!project.organizationId) {
-      return project.userId === userId;
-    }
-
-    const membership = project.organization?.memberships?.find((m: any) => m.userId === userId);
-    return membership?.role === 'OWNER';
-  }
-
-  private async getProjectWithReadAccess(id: number, userId: number) {
+  private async getProjectWithPermission(id: number, userId: number, permission: OrganizationPermission) {
     const project = await this.projectRepository.findById(id);
 
     if (!project) {
       throw new Error('Project not found');
     }
 
-    if (!this.hasProjectReadAccess(project, userId)) {
-      throw new Error('Unauthorized access');
-    }
-
-    return project;
-  }
-
-  private async getProjectWithManageAccess(id: number, userId: number) {
-    const project = await this.projectRepository.findById(id);
-
-    if (!project) {
-      throw new Error('Project not found');
-    }
-
-    if (!this.hasProjectManageAccess(project, userId)) {
+    if (!this.rbacService.hasProjectPermission(project, userId, permission)) {
       throw new Error('Unauthorized access');
     }
 
@@ -67,6 +39,10 @@ class ProjectService {
       const membership = await this.organizationService.getMembership(data.organizationId, userId);
       if (!membership) {
         throw new Error('Unauthorized organization access');
+      }
+
+      if (!this.rbacService.hasOrganizationPermission(membership.role, 'PROJECT_EDIT')) {
+        throw new Error('Insufficient permissions to create organization projects');
       }
     }
 
@@ -88,7 +64,7 @@ class ProjectService {
   }
 
   async getProjectById(id: number, userId: number) {
-    return await this.getProjectWithReadAccess(id, userId);
+    return await this.getProjectWithPermission(id, userId, 'PROJECT_VIEW');
   }
 
   async getAllProjects(userId: number) {
@@ -96,7 +72,7 @@ class ProjectService {
   }
 
   async updateProject(id: number, data: UpdateProjectDTO, userId: number) {
-    const project = await this.getProjectWithManageAccess(id, userId);
+    const project = await this.getProjectWithPermission(id, userId, 'PROJECT_EDIT');
 
     const updated = await this.projectRepository.update(id, data);
 
@@ -115,7 +91,7 @@ class ProjectService {
   }
 
   async deleteProject(id: number, userId: number) {
-    const project = await this.getProjectWithManageAccess(id, userId);
+    const project = await this.getProjectWithPermission(id, userId, 'PROJECT_DELETE');
 
     await this.auditService.log({
       userId,
@@ -132,13 +108,13 @@ class ProjectService {
   }
 
   async getProjectSummary(id: number, userId: number) {
-    await this.getProjectWithReadAccess(id, userId);
+    await this.getProjectWithPermission(id, userId, 'PROJECT_VIEW');
 
     return await this.projectRepository.getSummary(id);
   }
 
   async setBudget(id: number, budget: number | null, userId: number) {
-    const project = await this.getProjectWithManageAccess(id, userId);
+    const project = await this.getProjectWithPermission(id, userId, 'PROJECT_BUDGET_MANAGE');
 
     const updated = await this.projectRepository.update(id, { carbonBudget: budget } as any);
 
@@ -158,13 +134,13 @@ class ProjectService {
   }
 
   async getAlerts(id: number, userId: number) {
-    await this.getProjectWithReadAccess(id, userId);
+    await this.getProjectWithPermission(id, userId, 'PROJECT_VIEW');
 
     return await this.alertRepository.findByProjectId(id);
   }
 
   async markAlertsRead(id: number, userId: number) {
-    await this.getProjectWithReadAccess(id, userId);
+    await this.getProjectWithPermission(id, userId, 'PROJECT_VIEW');
 
     const unreadBefore = await this.alertRepository.countUnread(id);
 
@@ -184,7 +160,7 @@ class ProjectService {
   }
 
   async getAuditLogs(id: number, userId: number, filters?: { action?: string; page?: number; limit?: number }) {
-    await this.getProjectWithReadAccess(id, userId);
+    await this.getProjectWithPermission(id, userId, 'AUDIT_VIEW');
     return await this.auditService.getProjectAuditLogs(id, userId, filters);
   }
 }

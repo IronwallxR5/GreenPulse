@@ -9,7 +9,8 @@ GreenPulse currently provides:
 - Email/password authentication with JWT
 - Google OAuth sign-in and account linking by email
 - Organization and team workspaces with membership-based project access
-- Project CRUD with strict ownership checks
+- Role-scoped permissions (`OWNER`, `ADMIN`, `MEMBER`) across projects, impact logs, compliance, and audit visibility
+- Project CRUD with organization-aware access checks
 - Impact event CRUD with automatic CO2 score calculation
 - Search, filter, sort, and pagination for impact logs
 - Per-project summary and cross-project analytics dashboards
@@ -244,6 +245,7 @@ Authorization: Bearer <token>
 | `GET` | `/api/organizations` | List organizations for current user |
 | `GET` | `/api/organizations/:id/members` | List organization members |
 | `POST` | `/api/organizations/:id/members` | Add member by email |
+| `PATCH` | `/api/organizations/:id/members/:memberUserId/role` | Update member role |
 | `DELETE` | `/api/organizations/:id/members/:memberUserId` | Remove member |
 
 ### Realtime Channel
@@ -312,6 +314,5 @@ See `backend/prisma/schema.prisma` for source of truth.
 
 Planned next milestones:
 
-- RBAC with role-scoped permissions
 - Cloud provider ingestion adapters
 - Organization-level audit retention and export controls

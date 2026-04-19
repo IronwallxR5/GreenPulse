@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { projectService } from '../../services/project.service';
-import type { Project, Organization } from '../../services/project.service';
+import type { Project, Organization, OrganizationMember, OrganizationRole } from '../../services/project.service';
 import { Link } from 'react-router-dom';
 import { Plus, Trash2, FolderOpen, ArrowRight, Loader2, Leaf, Pencil, Sparkles, Gauge, Layers3, Building2, Users } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -24,6 +24,10 @@ export default function Dashboard() {
   // ── Organization state ──────────────────────────────────────────────────
   const [orgOpen, setOrgOpen] = useState(false);
   const [orgName, setOrgName] = useState('');
+  const [orgMembersOpen, setOrgMembersOpen] = useState(false);
+  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
+  const [memberEmail, setMemberEmail] = useState('');
+  const [memberRole, setMemberRole] = useState<OrganizationRole>('MEMBER');
 
   // ── Edit project state ───────────────────────────────────────────────────
   const [editOpen, setEditOpen]               = useState(false);
@@ -39,6 +43,16 @@ export default function Dashboard() {
   const { data: organizations = [] } = useQuery<Organization[]>({
     queryKey: ['organizations'],
     queryFn: projectService.getOrganizations,
+  });
+
+  const selectedOrganization = organizations.find((org) => org.id === selectedOrgId) ?? null;
+  const selectedOrganizationRole = selectedOrganization?.memberships?.[0]?.role ?? null;
+  const canManageMembers = selectedOrganizationRole === 'OWNER' || selectedOrganizationRole === 'ADMIN';
+
+  const { data: organizationMembers = [], isLoading: isLoadingOrganizationMembers } = useQuery<OrganizationMember[]>({
+    queryKey: ['organization-members', selectedOrgId],
+    queryFn: () => projectService.getOrganizationMembers(selectedOrgId!),
+    enabled: orgMembersOpen && selectedOrgId !== null,
   });
 
   const createMutation = useMutation({
@@ -59,6 +73,40 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
       setOrgOpen(false);
       setOrgName('');
+    },
+  });
+
+  const addOrganizationMemberMutation = useMutation({
+    mutationFn: (data: { organizationId: number; email: string; role: OrganizationRole }) =>
+      projectService.addOrganizationMember(data.organizationId, {
+        email: data.email,
+        role: data.role,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-members', selectedOrgId] });
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+      setMemberEmail('');
+      setMemberRole('MEMBER');
+    },
+  });
+
+  const updateOrganizationMemberRoleMutation = useMutation({
+    mutationFn: (data: { organizationId: number; memberUserId: number; role: OrganizationRole }) =>
+      projectService.updateOrganizationMemberRole(data.organizationId, data.memberUserId, {
+        role: data.role,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-members', selectedOrgId] });
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+    },
+  });
+
+  const removeOrganizationMemberMutation = useMutation({
+    mutationFn: (data: { organizationId: number; memberUserId: number }) =>
+      projectService.removeOrganizationMember(data.organizationId, data.memberUserId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['organization-members', selectedOrgId] });
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
     },
   });
 
@@ -99,6 +147,47 @@ export default function Dashboard() {
     e.preventDefault();
     if (!orgName.trim()) return;
     createOrganizationMutation.mutate({ name: orgName.trim() });
+  };
+
+  const openOrganizationMembersDialog = (organizationId: number) => {
+    setSelectedOrgId(organizationId);
+    setOrgMembersOpen(true);
+  };
+
+  const handleAddOrganizationMember = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrgId || !memberEmail.trim()) {
+      return;
+    }
+
+    addOrganizationMemberMutation.mutate({
+      organizationId: selectedOrgId,
+      email: memberEmail.trim(),
+      role: memberRole,
+    });
+  };
+
+  const handleRoleChange = (member: OrganizationMember, role: OrganizationRole) => {
+    if (!selectedOrgId || role === member.role) {
+      return;
+    }
+
+    updateOrganizationMemberRoleMutation.mutate({
+      organizationId: selectedOrgId,
+      memberUserId: member.userId,
+      role,
+    });
+  };
+
+  const handleRemoveMember = (member: OrganizationMember) => {
+    if (!selectedOrgId) {
+      return;
+    }
+
+    removeOrganizationMemberMutation.mutate({
+      organizationId: selectedOrgId,
+      memberUserId: member.userId,
+    });
   };
 
   const openEditDialog = (project: Project) => {
@@ -300,11 +389,119 @@ export default function Dashboard() {
                 <p className="mt-1 text-xs text-warm-500">
                   Members: {org._count?.memberships ?? 0} | Projects: {org._count?.projects ?? 0}
                 </p>
+                <Button
+                  type="button"
+                  onClick={() => openOrganizationMembersDialog(org.id)}
+                  className="mt-3 h-8 w-full rounded-md bg-forest-900 px-3 text-xs text-warm-50 hover:bg-forest-800"
+                >
+                  Manage Team
+                </Button>
               </div>
             ))}
           </div>
         </section>
       )}
+
+      <Dialog
+        open={orgMembersOpen}
+        onOpenChange={(open) => {
+          setOrgMembersOpen(open);
+          if (!open) {
+            setSelectedOrgId(null);
+            setMemberEmail('');
+            setMemberRole('MEMBER');
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-2xl border-warm-200 bg-white">
+          <DialogHeader>
+            <DialogTitle className="font-display text-warm-950">
+              {selectedOrganization ? `${selectedOrganization.name} Team` : 'Organization Team'}
+            </DialogTitle>
+          </DialogHeader>
+
+          {canManageMembers && (
+            <form onSubmit={handleAddOrganizationMember} className="grid grid-cols-1 gap-3 border-b border-warm-100 pb-4 md:grid-cols-[1fr_160px_auto]">
+              <Input
+                placeholder="member@company.com"
+                value={memberEmail}
+                onChange={(e) => setMemberEmail(e.target.value)}
+                className="h-10 border-warm-200 bg-white focus-visible:ring-forest-700"
+              />
+              <select
+                value={memberRole}
+                onChange={(e) => setMemberRole(e.target.value as OrganizationRole)}
+                className="h-10 w-full rounded-md border border-warm-200 bg-white px-3 text-sm text-warm-800 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700"
+              >
+                {selectedOrganizationRole === 'OWNER' && <option value="OWNER">Owner</option>}
+                <option value="ADMIN">Admin</option>
+                <option value="MEMBER">Member</option>
+              </select>
+              <Button
+                type="submit"
+                disabled={!memberEmail.trim() || addOrganizationMemberMutation.isPending || !selectedOrgId}
+                className="h-10 bg-forest-900 text-warm-50 hover:bg-forest-800"
+              >
+                {addOrganizationMemberMutation.isPending ? 'Adding...' : 'Add Member'}
+              </Button>
+            </form>
+          )}
+
+          {!canManageMembers && (
+            <p className="rounded-md border border-warm-200 bg-warm-50 px-3 py-2 text-xs text-warm-700">
+              You can view team members, but only owners and admins can manage memberships.
+            </p>
+          )}
+
+          <div className="max-h-[320px] space-y-2 overflow-y-auto pr-1">
+            {isLoadingOrganizationMembers && (
+              <div className="flex items-center justify-center py-8 text-sm text-warm-500">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading members...
+              </div>
+            )}
+
+            {!isLoadingOrganizationMembers && organizationMembers.length === 0 && (
+              <p className="py-6 text-center text-sm text-warm-500">No members found for this organization.</p>
+            )}
+
+            {!isLoadingOrganizationMembers && organizationMembers.map((member) => {
+              const isCurrentUser = member.userId === user?.id;
+              const isBusy = updateOrganizationMemberRoleMutation.isPending || removeOrganizationMemberMutation.isPending;
+
+              return (
+                <div key={member.id} className="flex flex-col gap-2 rounded-md border border-warm-100 px-3 py-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-warm-900">{member.user.name}</p>
+                    <p className="text-xs text-warm-500">{member.user.email}</p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={member.role}
+                      onChange={(e) => handleRoleChange(member, e.target.value as OrganizationRole)}
+                      disabled={!canManageMembers || isBusy || (!isCurrentUser && selectedOrganizationRole === 'ADMIN' && member.role === 'OWNER')}
+                      className="h-9 rounded-md border border-warm-200 bg-white px-2 text-xs text-warm-800 focus:border-forest-700 focus:outline-none focus:ring-2 focus:ring-forest-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {selectedOrganizationRole === 'OWNER' && <option value="OWNER">Owner</option>}
+                      <option value="ADMIN">Admin</option>
+                      <option value="MEMBER">Member</option>
+                    </select>
+
+                    <Button
+                      type="button"
+                      onClick={() => handleRemoveMember(member)}
+                      disabled={!canManageMembers || isBusy || (!isCurrentUser && selectedOrganizationRole === 'ADMIN' && member.role === 'OWNER')}
+                      className="h-9 rounded-md border border-red-200 bg-white px-3 text-xs text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {projects.length > 0 && (
         <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 stagger-group">

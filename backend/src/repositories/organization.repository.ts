@@ -102,6 +102,20 @@ class OrganizationRepository {
     });
   }
 
+  async updateMemberRole(organizationId: number, userId: number, role: OrganizationRole) {
+    return await prisma.organizationMembership.update({
+      where: {
+        organizationId_userId: {
+          organizationId,
+          userId,
+        },
+      },
+      data: {
+        role,
+      },
+    });
+  }
+
   async removeMember(organizationId: number, userId: number) {
     return await prisma.organizationMembership.delete({
       where: {

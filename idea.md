@@ -68,9 +68,16 @@ GreenPulse addresses this gap with project-scoped impact logging and determinist
 ### Organizations and Teams
 
 - Organization creation for collaborative workspaces
-- Membership model with owner/member roles
+- Membership model with owner/admin/member roles
 - Team member add/remove management endpoints
+- Member role update endpoint with owner safeguards
 - Shared project visibility for organization members
+
+### RBAC and Access Governance
+
+- Centralized role-to-permission mapping in backend service layer
+- Role-scoped checks for project management, budgets, impacts, compliance schedules, and audit visibility
+- Dashboard team-management controls for role updates
 
 ## Architectural Intent
 
@@ -96,16 +103,14 @@ Out of scope now:
 
 - Direct ingestion from cloud provider APIs
 - Streaming event ingestion pipeline
-- RBAC with fine-grained permissions
 - Audit-log governance model
 
 ## Roadmap Priorities
 
-1. Introduce RBAC (member/admin roles).
-2. Integrate cloud provider usage ingestion.
-3. Add organization-level audit retention and export controls.
-4. Add organization-level report distribution channels.
-5. Add SSO/SCIM provisioning for enterprise organizations.
+1. Integrate cloud provider usage ingestion.
+2. Add organization-level audit retention and export controls.
+3. Add organization-level report distribution channels.
+4. Add SSO/SCIM provisioning for enterprise organizations.
 
 ## Success Criteria
 

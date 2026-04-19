@@ -106,7 +106,7 @@ export interface ComplianceReportList {
   };
 }
 
-export type OrganizationRole = 'OWNER' | 'MEMBER';
+export type OrganizationRole = 'OWNER' | 'ADMIN' | 'MEMBER';
 
 export interface Organization {
   id: number;
@@ -267,6 +267,15 @@ export const projectService = {
     payload: { email: string; role?: OrganizationRole },
   ): Promise<OrganizationMember> {
     const res = await api.post(`/organizations/${id}/members`, payload);
+    return res.data;
+  },
+
+  async updateOrganizationMemberRole(
+    id: number,
+    memberUserId: number,
+    payload: { role: OrganizationRole },
+  ): Promise<OrganizationMember> {
+    const res = await api.patch(`/organizations/${id}/members/${memberUserId}/role`, payload);
     return res.data;
   },
 

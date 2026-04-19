@@ -65,7 +65,7 @@ class OrganizationController {
       }
 
       if (!Object.values(OrganizationRole).includes(roleRaw as OrganizationRole)) {
-        res.status(StatusCodes.BAD_REQUEST).json({ message: 'role must be OWNER or MEMBER' });
+        res.status(StatusCodes.BAD_REQUEST).json({ message: 'role must be OWNER, ADMIN, or MEMBER' });
         return;
       }
 
@@ -83,6 +83,43 @@ class OrganizationController {
         message === 'Organization not found'
           ? StatusCodes.NOT_FOUND
           : message === 'User with this email does not exist' || message === 'User is already a member of this organization'
+            ? StatusCodes.BAD_REQUEST
+            : StatusCodes.FORBIDDEN;
+      res.status(status).json({ message });
+    }
+  };
+
+  updateOrganizationMemberRole = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const requesterUserId = req.userId!;
+      const organizationId = parseInt(String(req.params.id));
+      const targetUserId = parseInt(String(req.params.memberUserId));
+      const roleRaw = String(req.body.role || '').toUpperCase();
+
+      if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+        res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid member user id' });
+        return;
+      }
+
+      if (!Object.values(OrganizationRole).includes(roleRaw as OrganizationRole)) {
+        res.status(StatusCodes.BAD_REQUEST).json({ message: 'role must be OWNER, ADMIN, or MEMBER' });
+        return;
+      }
+
+      const member = await this.organizationService.updateOrganizationMemberRole(
+        organizationId,
+        requesterUserId,
+        targetUserId,
+        roleRaw as OrganizationRole,
+      );
+
+      res.status(StatusCodes.OK).json(member);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update organization member role';
+      const status =
+        message === 'Organization not found'
+          ? StatusCodes.NOT_FOUND
+          : message === 'Organization member not found' || message === 'Cannot demote the last organization owner'
             ? StatusCodes.BAD_REQUEST
             : StatusCodes.FORBIDDEN;
       res.status(status).json({ message });

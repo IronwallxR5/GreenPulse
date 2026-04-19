@@ -11,6 +11,7 @@ import {
 } from '../models/ImpactEvent';
 import { NotificationService } from './notifications/NotificationService';
 import AuditService from './audit.service';
+import RbacService, { OrganizationPermission } from './rbac.service';
 
 interface GetAllFilters {
   type?: ImpactType;
@@ -26,23 +27,23 @@ class ImpactService {
   private projectRepository: ProjectRepository;
   private notificationService: NotificationService;
   private auditService: AuditService;
+  private rbacService: RbacService;
 
   constructor() {
     this.impactRepository = new ImpactRepository();
     this.projectRepository = new ProjectRepository();
     this.notificationService = NotificationService.getInstance();
     this.auditService = new AuditService();
+    this.rbacService = new RbacService();
   }
 
-  private async verifyProjectAccess(projectId: number, userId: number) {
+  private async verifyProjectAccess(projectId: number, userId: number, permission: OrganizationPermission) {
     const project = await this.projectRepository.findById(projectId);
     if (!project) {
       throw new Error('Project not found');
     }
 
-    const hasAccess = project.organizationId
-      ? project.organization?.memberships?.some((membership) => membership.userId === userId)
-      : project.userId === userId;
+    const hasAccess = this.rbacService.hasProjectPermission(project, userId, permission);
 
     if (!hasAccess) {
       throw new Error('Unauthorized access');
@@ -52,7 +53,7 @@ class ImpactService {
   }
 
   async createImpact(data: CreateImpactDTO, projectId: number, userId: number) {
-    const project = await this.verifyProjectAccess(projectId, userId);
+    const project = await this.verifyProjectAccess(projectId, userId, 'IMPACT_EDIT');
     const carbonScore = this.calculateCO2(data.type, data.unitValue);
 
     const impact = await this.impactRepository.create({
@@ -109,13 +110,13 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    await this.verifyProjectAccess(impact.projectId, userId);
+    await this.verifyProjectAccess(impact.projectId, userId, 'IMPACT_VIEW');
 
     return impact;
   }
 
   async getAllImpacts(projectId: number, userId: number, filters?: GetAllFilters) {
-    await this.verifyProjectAccess(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId, 'IMPACT_VIEW');
     return await this.impactRepository.findByProjectId(projectId, filters);
   }
 
@@ -126,7 +127,7 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    await this.verifyProjectAccess(existingImpact.projectId, userId);
+    await this.verifyProjectAccess(existingImpact.projectId, userId, 'IMPACT_EDIT');
 
     const updateData: any = { ...data };
 
@@ -159,7 +160,7 @@ class ImpactService {
       throw new Error('Impact not found');
     }
 
-    await this.verifyProjectAccess(impact.projectId, userId);
+    await this.verifyProjectAccess(impact.projectId, userId, 'IMPACT_EDIT');
 
     await this.auditService.log({
       userId,
@@ -177,7 +178,7 @@ class ImpactService {
   }
 
   async getSummary(projectId: number, userId: number) {
-    await this.verifyProjectAccess(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId, 'IMPACT_VIEW');
     return await this.impactRepository.getSummaryByProjectId(projectId);
   }
 

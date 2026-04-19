@@ -4,6 +4,7 @@ import ImpactRepository from '../repositories/impact.repository';
 import ReportScheduleRepository from '../repositories/reportSchedule.repository';
 import ComplianceReportRepository from '../repositories/complianceReport.repository';
 import AuditService from './audit.service';
+import RbacService, { OrganizationPermission } from './rbac.service';
 
 interface UpsertReportScheduleInput {
   frequency: ReportFrequency;
@@ -23,6 +24,7 @@ class ComplianceService {
   private reportScheduleRepository: ReportScheduleRepository;
   private complianceReportRepository: ComplianceReportRepository;
   private auditService: AuditService;
+  private rbacService: RbacService;
   private runningDueCheck = false;
 
   constructor() {
@@ -31,40 +33,19 @@ class ComplianceService {
     this.reportScheduleRepository = new ReportScheduleRepository();
     this.complianceReportRepository = new ComplianceReportRepository();
     this.auditService = new AuditService();
+    this.rbacService = new RbacService();
   }
 
-  private async verifyProjectAccess(projectId: number, userId: number) {
+  private async verifyProjectAccess(projectId: number, userId: number, permission: OrganizationPermission) {
     const project = await this.projectRepository.findById(projectId);
 
     if (!project) {
       throw new Error('Project not found');
     }
 
-    const hasAccess = project.organizationId
-      ? project.organization?.memberships?.some((membership) => membership.userId === userId)
-      : project.userId === userId;
+    const hasAccess = this.rbacService.hasProjectPermission(project, userId, permission);
 
     if (!hasAccess) {
-      throw new Error('Unauthorized access');
-    }
-
-    return project;
-  }
-
-  private async verifyProjectManageAccess(projectId: number, userId: number) {
-    const project = await this.projectRepository.findById(projectId);
-
-    if (!project) {
-      throw new Error('Project not found');
-    }
-
-    const hasManageAccess = project.organizationId
-      ? project.organization?.memberships?.some(
-          (membership) => membership.userId === userId && membership.role === 'OWNER',
-        )
-      : project.userId === userId;
-
-    if (!hasManageAccess) {
       throw new Error('Unauthorized access');
     }
 
@@ -102,12 +83,12 @@ class ComplianceService {
   }
 
   async getReportSchedule(projectId: number, userId: number) {
-    await this.verifyProjectAccess(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId, 'COMPLIANCE_VIEW');
     return await this.reportScheduleRepository.findByProjectId(projectId);
   }
 
   async upsertReportSchedule(projectId: number, userId: number, data: UpsertReportScheduleInput) {
-    await this.verifyProjectManageAccess(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId, 'COMPLIANCE_MANAGE');
 
     const startsAt = this.parseStartsAt(data.startsAt);
     const base = startsAt ?? new Date();
@@ -141,7 +122,7 @@ class ComplianceService {
   }
 
   async deleteReportSchedule(projectId: number, userId: number) {
-    await this.verifyProjectManageAccess(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId, 'COMPLIANCE_MANAGE');
 
     const existing = await this.reportScheduleRepository.findByProjectId(projectId);
     if (!existing) {
@@ -166,7 +147,7 @@ class ComplianceService {
   }
 
   async getComplianceReports(projectId: number, userId: number, filters?: ComplianceReportFilters) {
-    await this.verifyProjectAccess(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId, 'COMPLIANCE_VIEW');
     return await this.complianceReportRepository.findByProjectId(projectId, filters);
   }
 
@@ -205,7 +186,7 @@ class ComplianceService {
   }
 
   async runComplianceReportNow(projectId: number, userId: number, format?: ReportFormat) {
-    await this.verifyProjectAccess(projectId, userId);
+    await this.verifyProjectAccess(projectId, userId, 'COMPLIANCE_MANAGE');
 
     const schedule = await this.reportScheduleRepository.findByProjectId(projectId);
     const resolvedFormat = format ?? schedule?.format ?? ReportFormat.PDF;

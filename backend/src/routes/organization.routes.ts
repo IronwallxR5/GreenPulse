@@ -22,6 +22,12 @@ class OrganizationRoutes implements Routes {
 
     this.router.post(`${this.path}/:id/members`, authenticateToken, this.organizationController.addOrganizationMember);
 
+    this.router.patch(
+      `${this.path}/:id/members/:memberUserId/role`,
+      authenticateToken,
+      this.organizationController.updateOrganizationMemberRole,
+    );
+
     this.router.delete(
       `${this.path}/:id/members/:memberUserId`,
       authenticateToken,

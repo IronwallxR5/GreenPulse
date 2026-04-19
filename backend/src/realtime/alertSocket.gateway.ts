@@ -2,6 +2,7 @@ import { Server as HttpServer } from 'http';
 import { Server, Socket } from 'socket.io';
 import jwt from 'jsonwebtoken';
 import ProjectRepository from '../repositories/project.repository';
+import RbacService from '../services/rbac.service';
 
 interface SocketJwtPayload {
   userId: number;
@@ -27,6 +28,7 @@ interface ThresholdAlertPayload {
 
 let ioInstance: Server | null = null;
 const projectRepository = new ProjectRepository();
+const rbacService = new RbacService();
 
 const getRoomName = (projectId: number) => `project:${projectId}`;
 
@@ -63,7 +65,7 @@ const subscribeProject = async (
   }
 
   const project = await projectRepository.findById(projectId);
-  if (!project || project.userId !== socket.data.userId) {
+  if (!project || !rbacService.hasProjectPermission(project, socket.data.userId, 'PROJECT_VIEW')) {
     acknowledge?.({ ok: false, message: 'Unauthorized project subscription' });
     return;
   }

@@ -16,6 +16,7 @@ enum ImpactType {
 
 enum OrganizationRole {
   OWNER
+  ADMIN
   MEMBER
 }
 

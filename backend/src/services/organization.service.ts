@@ -2,16 +2,19 @@ import { OrganizationRole } from '@prisma/client';
 import OrganizationRepository from '../repositories/organization.repository';
 import UserRepository from '../repositories/user.repository';
 import AuditService from './audit.service';
+import RbacService from './rbac.service';
 
 class OrganizationService {
   private organizationRepository: OrganizationRepository;
   private userRepository: UserRepository;
   private auditService: AuditService;
+  private rbacService: RbacService;
 
   constructor() {
     this.organizationRepository = new OrganizationRepository();
     this.userRepository = new UserRepository();
     this.auditService = new AuditService();
+    this.rbacService = new RbacService();
   }
 
   private async getOrganizationAndMembership(organizationId: number, userId: number) {
@@ -69,8 +72,12 @@ class OrganizationService {
   ) {
     const { membership } = await this.getOrganizationAndMembership(organizationId, requesterUserId);
 
-    if (membership.role !== OrganizationRole.OWNER) {
-      throw new Error('Only organization owners can add members');
+    if (!this.rbacService.hasOrganizationPermission(membership.role, 'ORG_MEMBER_MANAGE')) {
+      throw new Error('Insufficient permissions to add organization members');
+    }
+
+    if (role === OrganizationRole.OWNER && membership.role !== OrganizationRole.OWNER) {
+      throw new Error('Only organization owners can assign OWNER role');
     }
 
     const user = await this.userRepository.findByEmail(email.trim().toLowerCase());
@@ -100,16 +107,74 @@ class OrganizationService {
     return member;
   }
 
-  async removeOrganizationMember(organizationId: number, requesterUserId: number, targetUserId: number) {
+  async updateOrganizationMemberRole(
+    organizationId: number,
+    requesterUserId: number,
+    targetUserId: number,
+    newRole: OrganizationRole,
+  ) {
     const { membership } = await this.getOrganizationAndMembership(organizationId, requesterUserId);
 
-    if (membership.role !== OrganizationRole.OWNER) {
-      throw new Error('Only organization owners can remove members');
+    if (!this.rbacService.hasOrganizationPermission(membership.role, 'ORG_MEMBER_MANAGE')) {
+      throw new Error('Insufficient permissions to update organization member roles');
     }
 
     const targetMembership = await this.organizationRepository.findMembership(organizationId, targetUserId);
     if (!targetMembership) {
       throw new Error('Organization member not found');
+    }
+
+    if (targetMembership.role === OrganizationRole.OWNER && membership.role !== OrganizationRole.OWNER) {
+      throw new Error('Only organization owners can update owner roles');
+    }
+
+    if (newRole === OrganizationRole.OWNER && membership.role !== OrganizationRole.OWNER) {
+      throw new Error('Only organization owners can assign OWNER role');
+    }
+
+    if (targetMembership.role === OrganizationRole.OWNER && newRole !== OrganizationRole.OWNER) {
+      const members = await this.organizationRepository.listMembers(organizationId);
+      const ownerCount = members.filter((m) => m.role === OrganizationRole.OWNER).length;
+      if (ownerCount <= 1) {
+        throw new Error('Cannot demote the last organization owner');
+      }
+    }
+
+    const updatedMembership = await this.organizationRepository.updateMemberRole(
+      organizationId,
+      targetUserId,
+      newRole,
+    );
+
+    await this.auditService.log({
+      userId: requesterUserId,
+      action: 'ORGANIZATION_MEMBER_ROLE_UPDATED',
+      entityType: 'ORGANIZATION',
+      entityId: organizationId,
+      metadata: {
+        targetUserId,
+        previousRole: targetMembership.role,
+        newRole,
+      },
+    });
+
+    return updatedMembership;
+  }
+
+  async removeOrganizationMember(organizationId: number, requesterUserId: number, targetUserId: number) {
+    const { membership } = await this.getOrganizationAndMembership(organizationId, requesterUserId);
+
+    if (!this.rbacService.hasOrganizationPermission(membership.role, 'ORG_MEMBER_MANAGE')) {
+      throw new Error('Insufficient permissions to remove organization members');
+    }
+
+    const targetMembership = await this.organizationRepository.findMembership(organizationId, targetUserId);
+    if (!targetMembership) {
+      throw new Error('Organization member not found');
+    }
+
+    if (targetMembership.role === OrganizationRole.OWNER && membership.role !== OrganizationRole.OWNER) {
+      throw new Error('Only organization owners can remove owners');
     }
 
     if (targetMembership.role === OrganizationRole.OWNER) {

@@ -37,7 +37,7 @@ erDiagram
         int id PK
         int organization_id FK
         int user_id FK
-        enum role "OWNER | MEMBER"
+        enum role "OWNER | ADMIN | MEMBER"
         timestamp created_at
     }
 
