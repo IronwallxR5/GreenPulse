@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { Suspense, lazy } from 'react';
 import type { ReactNode } from 'react';
+import ServerNotice from './components/ui/ServerNotice';
 
 const Layout = lazy(() => import('./components/layout/Layout'));
 const Login = lazy(() => import('./pages/Auth/Login'));
@@ -40,6 +41,7 @@ function ProtectedRoute({ children }: { children: ReactNode }) {
 function App() {
   return (
     <BrowserRouter>
+      <ServerNotice />
       <Routes>
         <Route path="/login" element={<LazyPage><Login /></LazyPage>} />
         <Route path="/register" element={<LazyPage><Register /></LazyPage>} />
