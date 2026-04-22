@@ -1,5 +1,18 @@
 # Sequence Diagrams - GreenPulse
 
+## Overview
+
+This document shows the key request flows through the GreenPulse backend. Each diagram traces the full call chain from HTTP client through middleware, controller, service, and repository layers.
+
+## Flow Summary
+
+| Phase | Description | Key Patterns Used |
+|---|---|---|
+| 1. Impact Logging | User submits an impact event. Auth and validation middleware run first, then the service delegates to a factory that selects the correct `ImpactEvent` subclass and calculates CO2. The log is persisted and an audit entry is written. | Factory Method, Polymorphism, Repository |
+| 2. Threshold Alert | After each impact write, the service checks total CO2 against the project budget. If exceeded, `NotificationService` persists an `Alert` record and fans the payload out to all subscribed WebSocket and SSE clients simultaneously. | Observer, Pub/Sub Gateway |
+| 3. Report Download | User requests a PDF or CSV export. `ProjectController` selects a report strategy at runtime and delegates to `ReportingService`, which fetches project and impact data then invokes the strategy to produce the file buffer. | Strategy Pattern, Repository |
+| 4. Compliance Scheduling | User configures a recurring schedule (daily/weekly/monthly). The scheduler loop polls for due schedules, generates a compliance snapshot for each, updates the run-state, and appends an audit log entry. | Scheduling, Template Method, Repository |
+
 ## 1) Impact Logging and Threshold Alert Flow
 
 ```mermaid
