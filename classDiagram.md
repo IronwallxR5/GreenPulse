@@ -172,6 +172,16 @@ classDiagram
         +getSummary(req, res): void
     }
 
+    class OrganizationController {
+        -organizationService: OrganizationService
+        +createOrganization(req, res): void
+        +getOrganizations(req, res): void
+        +getMembers(req, res): void
+        +addMember(req, res): void
+        +updateMemberRole(req, res): void
+        +removeMember(req, res): void
+    }
+
     class AuthService {
         -userRepository: UserRepository
         +register(data): AuthResponse
@@ -217,6 +227,22 @@ classDiagram
         -projectRepository: ProjectRepository
         +log(input): AuditLog
         +getProjectAuditLogs(projectId, userId, filters): AuditLogList
+    }
+
+    class OrganizationService {
+        -organizationRepository: OrganizationRepository
+        -rbacService: RbacService
+        +createOrganization(data, userId): Organization
+        +getOrganizationsByUser(userId): OrganizationList
+        +getMembers(orgId, userId): MemberList
+        +addMember(orgId, email, userId): OrganizationMembership
+        +updateMemberRole(orgId, memberUserId, role, requesterId): OrganizationMembership
+        +removeMember(orgId, memberUserId, requesterId): void
+    }
+
+    class RbacService {
+        +hasPermission(role, action): boolean
+        +assertPermission(role, action): void
     }
 
     class ComplianceService {
@@ -327,6 +353,17 @@ classDiagram
         +findByProjectId(projectId, filters): ComplianceReportList
     }
 
+    class OrganizationRepository {
+        +create(data): Organization
+        +findById(id): OrganizationNullable
+        +findByUserId(userId): OrganizationList
+        +findMembersByOrgId(orgId): MemberList
+        +findMembership(orgId, userId): MembershipNullable
+        +addMember(data): OrganizationMembership
+        +updateMemberRole(orgId, userId, role): OrganizationMembership
+        +removeMember(orgId, userId): void
+    }
+
     User "1" --> "*" Project : owns
     Project "1" --> "*" ImpactLog : contains
     Project "1" --> "*" Alert : raises
@@ -350,6 +387,7 @@ classDiagram
     ProjectController --> ReportingService
     ProjectController --> ComplianceService
     ImpactController --> ImpactService
+    OrganizationController --> OrganizationService
 
     AuthService --> UserRepository
     ProjectService --> ProjectRepository
@@ -375,6 +413,8 @@ classDiagram
     ReportingService --> IReportStrategy
     IReportStrategy <|.. PdfReportStrategy
     IReportStrategy <|.. CsvReportStrategy
+    OrganizationService --> OrganizationRepository
+    OrganizationService --> RbacService
 ```
 
 ## Pattern Mapping
@@ -388,10 +428,12 @@ classDiagram
 | Pub/Sub Gateway | `AlertSocketGateway` + Socket.IO rooms | Project-scoped realtime multi-client alert delivery |
 | Audit Trail | `AuditService` + `AuditRepository` | Durable traceability for key project/impact mutations |
 | Scheduling | `ComplianceService` + scheduler | Automated recurring compliance snapshots |
+| RBAC | `RbacService` | Role-to-permission enforcement across org management endpoints |
 | Repository | `*.repository.ts` classes | Database abstraction over Prisma |
 
 ## Planned Extensions (Not Implemented Yet)
 
-- Role/permission classes for RBAC
 - Additional notification channels (email/webhook)
 - Cloud ingestion connectors and normalization models
+- Audit-log governance and retention policy classes
+- SSO/SCIM provisioning adapters
