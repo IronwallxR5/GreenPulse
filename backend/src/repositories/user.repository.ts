@@ -37,6 +37,13 @@ class UserRepository {
       data: { googleId },
     });
   }
+
+  async updateName(userId: number, name: string) {
+    return await prisma.user.update({
+      where: { id: userId },
+      data: { name },
+    });
+  }
 }
 
 export default UserRepository;

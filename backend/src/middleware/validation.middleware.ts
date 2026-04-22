@@ -14,6 +14,10 @@ const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(80, 'Name is too long'),
+});
+
 const createImpactSchema = z.object({
   name: z.string().min(1, 'Name is required'),
   description: z.string().optional(),
@@ -59,6 +63,7 @@ const validate = (schema: z.ZodSchema) => (req: Request, res: Response, next: Ne
 
 export const validateRegister = validate(registerSchema);
 export const validateLogin = validate(loginSchema);
+export const validateProfileUpdate = validate(updateProfileSchema);
 export const validateImpactCreate = validate(createImpactSchema);
 export const validateImpactUpdate = validate(updateImpactSchema);
 export const validateProjectCreate = validate(createProjectSchema);

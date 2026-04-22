@@ -24,6 +24,10 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface UpdateProfileRequest {
+  name: string;
+}
+
 export const authService = {
   async register(data: RegisterRequest): Promise<AuthResponse> {
     const res = await api.post('/auth/register', data);
@@ -37,6 +41,11 @@ export const authService = {
 
   async me(): Promise<User> {
     const res = await api.get('/auth/me');
+    return res.data;
+  },
+
+  async updateProfile(data: UpdateProfileRequest): Promise<User> {
+    const res = await api.patch('/auth/me', data);
     return res.data;
   },
 

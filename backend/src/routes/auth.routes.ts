@@ -2,7 +2,7 @@ import { Router } from 'express';
 import passport from 'passport';
 import { Routes } from '../utils/interfaces';
 import AuthController from '../controllers/auth.controller';
-import { validateRegister, validateLogin } from '../middleware/validation.middleware';
+import { validateRegister, validateLogin, validateProfileUpdate } from '../middleware/validation.middleware';
 import { authenticateToken } from '../middleware/auth.middleware';
 
 class AuthRoutes implements Routes {
@@ -20,6 +20,7 @@ class AuthRoutes implements Routes {
     this.router.post(`${this.path}/register`, validateRegister, this.authController.register);
     this.router.post(`${this.path}/login`, validateLogin, this.authController.login);
     this.router.get(`${this.path}/me`, authenticateToken, this.authController.me);
+    this.router.patch(`${this.path}/me`, authenticateToken, validateProfileUpdate, this.authController.updateMe);
 
     // --- Google OAuth ---
     // Step 1: Redirect the user to Google's consent screen

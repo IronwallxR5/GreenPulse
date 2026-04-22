@@ -49,6 +49,25 @@ class AuthController {
     }
   };
 
+  updateMe = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const userId = req.userId!;
+      const existingUser = await this.userRepository.findById(userId);
+
+      if (!existingUser) {
+        res.status(StatusCodes.NOT_FOUND).json({ message: 'User not found' });
+        return;
+      }
+
+      const updatedUser = await this.userRepository.updateName(userId, req.body.name.trim());
+      const { password: _pw, googleId: _gid, ...safeUser } = updatedUser;
+      res.status(StatusCodes.OK).json(safeUser);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to update profile';
+      res.status(StatusCodes.BAD_REQUEST).json({ message });
+    }
+  };
+
   /**
    * Called after Passport has verified the Google user.
    * req.user is set by passport.authenticate() before this runs.
