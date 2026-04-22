@@ -13,7 +13,7 @@ GreenPulse currently provides:
 - Email/password authentication with JWT
 - Google OAuth sign-in and account linking by email
 - Organization and team workspaces with membership-based project access
-- Role-scoped permissions (`OWNER`, `ADMIN`, `MEMBER`) across projects, impact logs, compliance, and audit visibility
+- Role-scoped permissions (`OWNER`, `ADMIN`, `MEMBER`) enforced by `RbacService` across projects, impact logs, compliance, and audit visibility
 - Project CRUD with organization-aware access checks
 - Impact event CRUD with automatic CO2 score calculation
 - Search, filter, sort, and pagination for impact logs
@@ -23,13 +23,11 @@ GreenPulse currently provides:
 - Project-level audit trail for compliance and change traceability
 - Automated recurring compliance report snapshots with schedule controls
 - PDF and CSV report export
-
-Recent frontend updates also include:
-
-- Refreshed global theme tokens and modernized app shell
+- Refreshed global theme with warm terroir palette, Space Grotesk and Plus Jakarta Sans typography
 - Dashboard project search, workspace filters, and sort controls
-- Analytics enhancements with richer KPI cards and trend views
-- Polished auth flows with improved form interactions
+- Analytics KPI cards and trend visualizations
+- Polished auth flows with improved form interactions and route-level lazy loading
+- First-time user cold-start notice for Render backend warm-up
 
 ## Tech Stack
 
@@ -91,17 +89,17 @@ GreenPulse/
         validation.middleware.ts
       models/
         ImpactEvent.ts
+      realtime/
+        alertSocket.gateway.ts
       repositories/
-        audit.repository.ts
         alert.repository.ts
+        audit.repository.ts
         complianceReport.repository.ts
         impact.repository.ts
         organization.repository.ts
         project.repository.ts
         reportSchedule.repository.ts
         user.repository.ts
-      realtime/
-        alertSocket.gateway.ts
       routes/
         auth.routes.ts
         impact.routes.ts
@@ -114,6 +112,7 @@ GreenPulse/
         impact.service.ts
         organization.service.ts
         project.service.ts
+        rbac.service.ts
         notifications/
           NotificationService.ts
         reporting/
@@ -135,9 +134,18 @@ GreenPulse/
         layout/
           Layout.tsx
         ui/
-          ...
+          button.tsx
+          card.tsx
+          dialog.tsx
+          form.tsx
+          input.tsx
+          label.tsx
+          ServerNotice.tsx
+          table.tsx
       hooks/
         useDebounce.ts
+      lib/
+        utils.ts
       pages/
         Analytics/
         Auth/
@@ -340,7 +348,8 @@ See `backend/prisma/schema.prisma` for source of truth.
 
 ## Deployment Notes
 
-- Frontend is deployed on Vercel at https://green-pulse-eta.vercel.app/
+- Frontend is deployed on **Vercel** at https://green-pulse-eta.vercel.app/
+- Backend is deployed on **Render (free tier)** — the server may take 2-3 minutes to spin up after a period of inactivity (cold start). A first-time user notice in the UI (`ServerNotice.tsx`) communicates this.
 - SPA route refresh fallback is configured via `frontend/vercel.json`
 - Configure backend CORS and OAuth env vars so `FRONTEND_URL` points to the hosted frontend URL in production
 
@@ -350,3 +359,5 @@ Planned next milestones:
 
 - Cloud provider ingestion adapters
 - Organization-level audit retention and export controls
+- Organization-level report distribution channels (email/webhook)
+- SSO/SCIM provisioning for enterprise organizations
