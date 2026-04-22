@@ -53,14 +53,14 @@ export default function Layout() {
   const isNavActive = (to: string) => location.pathname === to || location.pathname.startsWith(`${to}/`);
 
   return (
-    <div className="relative min-h-screen overflow-x-clip">
+    <div className="relative min-h-screen overflow-x-clip lg:h-screen lg:overflow-hidden">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -left-24 top-24 h-80 w-80 rounded-full bg-forest-300/20 blur-3xl animate-float" />
         <div className="absolute -right-20 top-8 h-72 w-72 rounded-full bg-gold-300/25 blur-3xl animate-float" />
         <div className="absolute bottom-0 left-1/3 h-96 w-96 rounded-full bg-forest-200/35 blur-3xl animate-drift" />
       </div>
 
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[280px] flex-col border-r border-forest-800/70 bg-forest-950/95 px-4 pb-4 pt-5 text-warm-50 backdrop-blur lg:flex">
+      <aside className="fixed inset-y-0 left-0 z-40 hidden h-screen w-[280px] flex-col overflow-y-auto border-r border-forest-800/70 bg-forest-950/95 px-4 pb-4 pt-5 text-warm-50 backdrop-blur lg:flex">
         <Link to="/dashboard" className="group rounded-2xl border border-forest-800/90 bg-forest-900/85 p-4 transition-colors hover:border-forest-700">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gold-500/95 shadow-lg transition-transform group-hover:scale-[1.03]">
@@ -217,8 +217,8 @@ export default function Layout() {
         )}
       </header>
 
-      <div className="relative lg:pl-[280px]">
-        <div className="hidden border-b border-warm-200/80 bg-white/70 backdrop-blur lg:block">
+      <div className="relative lg:h-screen lg:pl-[280px] lg:flex lg:flex-col">
+        <div className="hidden border-b border-warm-200/80 bg-white/70 backdrop-blur lg:block lg:flex-none">
           <div className="mx-auto grid max-w-[1300px] grid-cols-[1fr_auto] items-center gap-4 px-8 py-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-warm-500">Workspace</p>
@@ -245,7 +245,7 @@ export default function Layout() {
           </div>
         </div>
 
-        <main className="mx-auto max-w-[1300px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+        <main className="mx-auto max-w-[1300px] px-4 py-6 sm:px-6 lg:w-full lg:flex-1 lg:overflow-y-auto lg:px-8 lg:py-8">
           <div key={location.pathname} className="route-enter">
             <Outlet />
           </div>
