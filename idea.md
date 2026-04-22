@@ -1,122 +1,164 @@
-# GreenPulse Product Idea (Updated)
+# GreenPulse — Carbon Footprint Tracking Platform for Digital Infrastructure
 
-## Vision
+## Overview
 
-GreenPulse helps software teams treat carbon impact as a first-class engineering signal, alongside performance and cost. The platform turns operational infrastructure activity into measurable CO2 data that can be tracked, summarized, and reported.
+GreenPulse is a full-stack platform that helps software engineering teams treat carbon emissions as a first-class engineering signal — alongside performance and cost. The platform turns operational infrastructure activity (compute jobs, storage volumes, network transfers, API calls) into measurable CO2 data that can be tracked per project, summarized, alerted on, and reported to internal stakeholders.
 
-## Problem
+As cloud footprints grow and sustainability reporting becomes a regulatory and reputational expectation, teams need structured tooling to measure, understand, and reduce their digital carbon impact. GreenPulse fills this gap with deterministic calculation rules, real-time alerting, and audit-grade compliance reporting.
 
-Most engineering teams can answer:
+---
 
-- How much did this service cost?
-- How fast is this endpoint?
+## Problem Statement
 
-But they cannot easily answer:
+Most engineering teams can readily answer cost and performance questions but are blind to emissions:
 
-- What is the carbon impact of this workload?
-- Which project contributes most to total emissions?
-- Are we exceeding an internal carbon budget?
+1. **No per-project carbon visibility** — Teams have no way to attribute CO2 to a specific service, workload, or project without custom instrumentation.
+2. **No actionable budgeting** — Without thresholds, emissions grow silently. Teams cannot set or enforce a carbon budget the way they enforce a cost budget.
+3. **Fragmented reporting** — Sustainability reports are assembled manually from spreadsheets rather than generated automatically from live operational data.
+4. **No audit trail** — Changes to projects and impact logs leave no structured record, making compliance and change-traceability difficult.
+5. **Team isolation** — Emissions data is locked to individual contributors with no organization-level workspace for collaborative oversight.
 
-GreenPulse addresses this gap with project-scoped impact logging and deterministic calculation rules.
+---
 
-## What Is Implemented Today
+## Scope
 
-### Platform Foundations
+### In Scope (Current)
 
-- Full-stack architecture: React frontend + Express/TypeScript backend
-- PostgreSQL persistence via Prisma
-- Layered backend design (controller -> service -> repository)
+- Full-stack carbon tracking: React frontend + Express/TypeScript API backend
+- Email/password and Google OAuth authentication with JWT
+- Organization workspaces with role-based membership (Owner, Admin, Member)
+- Project CRUD with per-organization visibility
+- Impact event logging for `COMPUTE`, `STORAGE`, `NETWORK`, and `API_CALL` activity
+- Automatic CO2 calculation using type-specific emission factors
+- Per-project carbon budget with real-time threshold alerts via WebSocket and SSE
+- Analytics dashboard with cross-project and by-type visualizations
+- PDF and CSV report generation and download
+- Recurring compliance report schedules (daily/weekly/monthly) with snapshot history
+- Structured audit trail for all key project and impact mutations
+- Role-scoped access enforcement via `RbacService`
 
-### Authentication
+### Out of Scope (Milestone 1)
 
-- Email/password registration and login
-- JWT-protected API routes
-- Google OAuth login flow
-- Google account linking for existing users with matching email
-
-### Carbon Tracking
-
-- Project CRUD with ownership checks
-- Project sharing through organization membership workspaces
-- Impact event CRUD under each project
-- Supported impact types: `COMPUTE`, `STORAGE`, `NETWORK`, `API_CALL`
-- Automatic CO2 calculation using polymorphic event classes
-- Search/filter/sort/pagination for impact logs
-
-### Reporting and Insights
-
-- Project summary endpoint with totals and type breakdown
-- Analytics UI with cross-project and by-type visualizations
-- Downloadable PDF and CSV reports (strategy-based generation)
-
-### Budgeting and Alerts
-
-- Optional per-project carbon budget
-- Threshold check after impact creation
-- Persistent alerts table when threshold is exceeded
-- API and UI support for viewing alerts and marking them as read
-- Real-time threshold alert delivery via WebSocket (with SSE compatibility endpoint)
-
-### Audit and Compliance
-
-- Structured audit log entries for key project and impact mutations
-- Project-level API to review chronological change history
-- Project view panel for recent audit trail visibility
-- Recurring compliance report schedules (daily/weekly/monthly)
-- Automated compliance snapshot generation with history per project
-
-### Organizations and Teams
-
-- Organization creation for collaborative workspaces
-- Membership model with owner/admin/member roles
-- Team member add/remove management endpoints
-- Member role update endpoint with owner safeguards
-- Shared project visibility for organization members
-
-### RBAC and Access Governance
-
-- Centralized role-to-permission mapping in backend service layer
-- Role-scoped checks for project management, budgets, impacts, compliance schedules, and audit visibility
-- Dashboard team-management controls for role updates
-
-## Architectural Intent
-
-GreenPulse intentionally uses OOP and pattern-oriented design where it provides real value:
-
-- Factory + Polymorphism for impact type calculation logic
-- Strategy for report output formats
-- Observer-style notification service for threshold events
-- Repository pattern for clean database abstraction
-
-This keeps feature growth manageable as impact types, report formats, and notification channels expand.
-
-## Scope Boundaries (Current)
-
-In scope now:
-
-- Single-tenant user-owned projects
-- Manual impact event entry through API/UI
-- Export-oriented reporting (PDF/CSV)
-- In-app alert persistence
-
-Out of scope now:
-
-- Direct ingestion from cloud provider APIs
+- Direct ingestion from cloud provider APIs (AWS, GCP, Azure)
 - Streaming event ingestion pipeline
-- Audit-log governance model
+- Email or webhook notification delivery
+- Blockchain-based immutable ledger
+- Mobile application (web-only)
+- Organization-level audit retention governance
+- SSO/SCIM enterprise provisioning
+
+---
+
+## Key Features
+
+### 1. Carbon Impact Logging
+
+- **Impact Events:** Users log infrastructure activity with a type (`COMPUTE`, `STORAGE`, `NETWORK`, `API_CALL`), name, description, and a unit value.
+- **Automatic CO2 Score:** Each event subclass applies a deterministic emission factor to the unit value. No manual calculation required.
+- **Filtering and Pagination:** Full search, filter by type, sort by field and direction, and paginate across large impact log sets.
+
+### 2. Project and Organization Management
+
+- **Projects:** Create isolated tracking scopes for services, teams, or workloads. Projects support full CRUD with ownership checks.
+- **Organizations:** Create collaborative team workspaces. Projects can be shared across all organization members.
+- **Role-Based Membership:** Three-tier org roles (`OWNER`, `ADMIN`, `MEMBER`) with safeguarded promotion and removal controls.
+
+### 3. Carbon Budgets and Realtime Alerts
+
+- **Budget Thresholds:** Assign an optional CO2 budget to any project. The system checks every impact write against the running total.
+- **Persistent Alerts:** When the budget is exceeded, a durable `Alert` record is written and surfaced in the project view.
+- **Realtime Delivery:** Socket.IO pushes the alert to all subscribed clients simultaneously. A server-sent events fallback endpoint is also available for environments where WebSocket is restricted.
+
+### 4. Analytics and Reporting
+
+- **Project Summary:** Per-project CO2 total, count, and breakdown by impact type.
+- **Analytics Dashboard:** Cross-project emissions trends, type-distribution charts, and KPI cards.
+- **PDF Export:** Formatted project impact report generated by `PdfReportStrategy` using PDFKit.
+- **CSV Export:** Tabular data export via `CsvReportStrategy`. Both formats are supported through a runtime Strategy swap.
+
+### 5. Compliance and Audit
+
+- **Audit Trail:** `AuditService` records a structured log entry for every key mutation (project create/update/delete, impact create/update/delete, budget set, schedule change).
+- **Recurring Compliance Snapshots:** Configure a schedule (daily/weekly/monthly) and the platform auto-generates a compliance report snapshot at each interval. History is retained per project.
+- **Manual Snapshot:** Trigger a compliance report at any time via the run-now endpoint.
+
+### 6. Access Governance (RBAC)
+
+- **Role-to-Permission Mapping:** `RbacService` centralizes permission definitions for actions across projects, impacts, compliance, and audit.
+- **Enforcement Points:** Every sensitive operation checks the caller's organization role before proceeding.
+- **Route-Level Auth:** All protected routes require a valid JWT, enforced by `AuthMiddleware` before any controller logic runs.
+
+### 7. Notification System (In-App)
+
+- **Threshold Alerts:** Delivered in real-time via Socket.IO (`threshold-alert` events in project-scoped rooms).
+- **SSE Fallback:** An EventSource-compatible stream endpoint for environments that cannot use WebSocket.
+- **Persistence:** All alerts are stored in the database and visible in the UI with read/unread state.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite, React Router, TanStack Query, Tailwind CSS, Recharts |
+| Backend | Node.js, Express 5, TypeScript |
+| Database | PostgreSQL via Prisma ORM |
+| Auth | JWT (`jsonwebtoken`), bcryptjs, Google OAuth (`passport`, `passport-google-oauth20`) |
+| Realtime | Socket.IO (WebSocket), Server-Sent Events (SSE) |
+| Validation | Zod schemas with middleware enforcement |
+| PDF Generation | PDFKit |
+| API Style | RESTful HTTP API |
+| Hosting | Frontend on Vercel, Backend on Render (free tier) |
+
+---
+
+## Architecture Principles
+
+GreenPulse follows a strict layered architecture: `Controller → Service → Repository`. Controllers handle HTTP concerns only. Services enforce business rules and orchestrate domain logic. Repositories isolate all Prisma queries from the rest of the application.
+
+OOP and design patterns are applied where they provide real value — not for their own sake:
+
+| Pattern | Where Used | Purpose |
+|---|---|---|
+| Factory Method | `ImpactService.calculateCO2()` | Selects the correct `ImpactEvent` subclass from the incoming `ImpactType` |
+| Polymorphism | `ImpactEvent` class hierarchy | Each subclass (`ComputeEvent`, `StorageEvent`, etc.) implements its own `calculateCO2()` formula |
+| Strategy | `ReportingService` + strategy classes | Swaps `PdfReportStrategy` or `CsvReportStrategy` at runtime without changing the calling code |
+| Observer (lightweight) | `NotificationService` | Notifies all registered in-process observers and persists an alert when a budget threshold is exceeded |
+| Pub/Sub Gateway | `AlertSocketGateway` + Socket.IO rooms | Fans realtime alert payloads to all connected clients subscribed to a project room |
+| Repository | `*.repository.ts` classes | Encapsulates all Prisma queries behind a clean interface, decoupling services from the ORM |
+| RBAC | `RbacService` | Centralizes role-to-permission mapping and enforces access gates across organization management operations |
+| Scheduling | `complianceScheduler` + `ComplianceService` | Polls for due report schedules at a regular interval and triggers automated snapshot generation |
+
+SOLID principles are followed across all modules, with particular emphasis on single responsibility (one class per concern) and open/closed (adding a new impact type or report format requires no changes to existing code).
+
+---
+
+## User Roles
+
+| Role | Description |
+|---|---|
+| **User** | Any authenticated account. Can create and manage their own projects, log impact events, set budgets, and view analytics. |
+| **Org Owner** | Created the organization. Has full control — can manage all members and org-level projects. Cannot be removed by other members. |
+| **Org Admin** | Can add/remove members and manage org projects. Cannot modify Owner status. |
+| **Org Member** | Has shared read access to org projects. Specific write capabilities depend on project-level ownership. |
+
+---
 
 ## Roadmap Priorities
 
-1. Integrate cloud provider usage ingestion.
+1. Integrate cloud provider usage ingestion (AWS Cost & Usage Reports, GCP Carbon Footprint API, Azure Emissions API).
 2. Add organization-level audit retention and export controls.
-3. Add organization-level report distribution channels.
+3. Add organization-level report distribution channels (email/webhook notifications when snapshots are generated).
 4. Add SSO/SCIM provisioning for enterprise organizations.
+
+---
 
 ## Success Criteria
 
 GreenPulse is succeeding when a team can:
 
-- Identify its highest-emission project quickly.
-- Set a budget and receive actionable threshold alerts.
-- Export report artifacts for internal sustainability reporting.
-- Extend logic (new impact types or report format) without major refactors.
+- Identify its highest-emission project in under one minute from the analytics dashboard.
+- Set a carbon budget and receive actionable, real-time threshold alerts without any manual polling.
+- Export audit-ready compliance report artifacts for internal sustainability reviews.
+- Extend the platform (add a new impact type or report format) without touching existing business logic.
+- Share a project workspace across a team with appropriate role-scoped access controls.
