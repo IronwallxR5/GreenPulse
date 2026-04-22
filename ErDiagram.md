@@ -1,6 +1,9 @@
 # ER Diagram - GreenPulse
 
-This ER diagram is aligned with the current Prisma schema in `backend/prisma/schema.prisma`.
+## Overview
+
+This Entity-Relationship diagram shows the database schema for the GreenPulse platform. All tables, columns, types, and relationships are defined below.
+
 
 ```mermaid
 erDiagram
@@ -161,10 +164,10 @@ erDiagram
 | `report_schedules` | `(projectId unique)`, `(userId)`, `(isActive, nextRunAt)` |
 | `compliance_reports` | `(projectId)`, `(scheduleId)`, `(generatedAt)` |
 
-## Planned Data Model Extensions
+## Implemented Data Model
 
-Not yet implemented, but expected future additions include:
+All tables represented in the diagram above are live in the current Prisma schema and in production.
+Future extensions expected to land in later milestones include:
 
-- organization and membership tables
-- role and permission tables for RBAC
-- cloud-ingestion and usage-normalization tables
+- Cloud-ingestion and usage-normalization tables
+- Audit-log retention governance tables
