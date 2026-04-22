@@ -25,8 +25,6 @@ import {
   CheckCircle,
   Eye,
   EyeOff,
-  ShieldCheck,
-  Sparkles,
 } from 'lucide-react';
 
 const registerSchema = z.object({
@@ -92,13 +90,6 @@ export default function Register() {
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -left-24 top-0 h-72 w-72 rounded-full bg-forest-500/30 blur-3xl" />
             <div className="absolute right-0 bottom-0 h-64 w-64 rounded-full bg-gold-300/25 blur-3xl" />
-          </div>
-
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 rounded-full border border-forest-700 bg-forest-900/60 px-3 py-1.5 text-xs text-forest-200">
-              <Leaf className="h-3.5 w-3.5 text-gold-300" />
-              Climate-minded onboarding
-            </div>
           </div>
 
           <div className="relative z-10 max-w-[460px] reveal-up">
@@ -287,16 +278,6 @@ export default function Register() {
             </Link>
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-warm-600">
-            <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 bg-white px-2.5 py-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-forest-600" />
-              Encrypted sessions
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 bg-white px-2.5 py-1">
-              <Sparkles className="h-3.5 w-3.5 text-gold-600" />
-              Team-ready workspace
-            </span>
-          </div>
           </div>
         </div>
       </div>

@@ -15,7 +15,7 @@ import {
   FormLabel,
   FormMessage,
 } from '../../components/ui/form';
-import { Leaf, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff, ShieldCheck, Globe } from 'lucide-react';
+import { Leaf, Mail, Lock, AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -68,13 +68,6 @@ export default function Login() {
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute -left-24 top-8 h-72 w-72 rounded-full bg-forest-500/30 blur-3xl" />
             <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-gold-300/20 blur-3xl" />
-          </div>
-
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 rounded-full border border-forest-700 bg-forest-900/60 px-3 py-1.5 text-xs text-forest-200">
-              <Leaf className="h-3.5 w-3.5 text-gold-300" />
-              Sustainable engineering workspace
-            </div>
           </div>
 
           <div className="relative z-10 max-w-[440px] reveal-up">
@@ -231,16 +224,6 @@ export default function Login() {
             By signing in, you agree to track your carbon impact responsibly.
           </p>
 
-          <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-warm-600">
-            <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 bg-white px-2.5 py-1">
-              <ShieldCheck className="h-3.5 w-3.5 text-forest-600" />
-              Secured auth
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-warm-200 bg-white px-2.5 py-1">
-              <Globe className="h-3.5 w-3.5 text-gold-600" />
-              OAuth ready
-            </span>
-          </div>
         </div>
       </div>
     </div>

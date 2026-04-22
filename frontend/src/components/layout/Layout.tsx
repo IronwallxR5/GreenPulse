@@ -229,13 +229,13 @@ export default function Layout() {
             </div>
 
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 rounded-full border border-warm-200 bg-white px-3 py-1.5 text-xs text-warm-700 shadow-warm-sm">
+              <div className="flex items-center gap-2 px-1 text-xs font-medium text-warm-700">
                 <span className="h-2 w-2 rounded-full bg-forest-500 animate-pulseSoft" />
                 Live ingestion active
               </div>
               <Link
                 to="/dashboard"
-                className="inline-flex items-center gap-1.5 rounded-full border border-forest-200 bg-forest-50 px-3 py-1.5 text-xs font-semibold text-forest-700 transition-colors hover:bg-forest-100"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-forest-200 bg-forest-50 px-3 py-1.5 text-xs font-semibold text-forest-700 transition-colors hover:bg-forest-100"
               >
                 <Command className="h-3.5 w-3.5" />
                 Command Deck

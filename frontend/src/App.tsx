@@ -16,7 +16,7 @@ const Profile = lazy(() => import('./pages/Profile'));
 function RouteLoader() {
   return (
     <div className="flex min-h-[45vh] items-center justify-center">
-      <div className="flex items-center gap-2 rounded-full border border-warm-200 bg-white px-4 py-2 text-sm text-warm-600 shadow-warm-sm">
+      <div className="flex items-center gap-2 text-sm text-warm-600">
         <span className="h-2.5 w-2.5 rounded-full bg-forest-500 animate-pulseSoft" />
         Loading view...
       </div>

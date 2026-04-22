@@ -55,7 +55,7 @@ export default function Profile() {
         </div>
           <h2 className="font-display text-xl font-bold text-warm-50">{profile?.name ?? '—'}</h2>
           <p className="mt-1 text-sm text-forest-300">{profile?.email ?? '—'}</p>
-          <div className="mt-4 flex items-center gap-1.5 rounded-full border border-forest-700 bg-forest-900 px-3 py-1.5 text-xs font-semibold text-gold-300">
+          <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-gold-300">
             <ShieldCheck className="h-3.5 w-3.5" />
             Verified Account
           </div>
